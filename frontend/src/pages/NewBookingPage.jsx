@@ -1,0 +1,351 @@
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+
+import api from '../api/axios';
+import LayoutShell from '../components/ui/LayoutShell';
+
+const NewBookingPage = () => {
+    const navigate = useNavigate();
+    const [pricingSettings, setPricingSettings] = useState({ hourlyRate: 500 });
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
+    const [successMsg, setSuccessMsg] = useState('');
+
+    useEffect(() => {
+        const fetchSettings = async () => {
+            try {
+                const res = await api.get('/settings/pricing');
+                if (res.data.success) {
+                    setPricingSettings(res.data.data);
+                }
+            } catch (err) {
+                console.error("Failed to fetch pricing settings", err);
+            }
+        };
+        fetchSettings();
+    }, []);
+
+    const getCurrentTime = () => {
+        const now = new Date();
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        return `${hours}:${minutes}`;
+    };
+
+    const [formData, setFormData] = useState({
+        bookingType: 'WALK_IN',
+        customerName: '',
+        coupleName: '',
+        photographyName: '',
+        phone: '',
+        persons: 1,
+        sessionType: 'ONE_HOUR',
+        customHours: 0,
+        startDate: new Date().toISOString().split('T')[0],
+        startTime: getCurrentTime(),
+        discountAmount: 0,
+        discountReference: '',
+        depositAmount: 0,
+        initialRentPayment: 0,
+        advanceTokenAmount: 0,
+        paymentMethod: 'CASH',
+        forceDepositAccept: false
+    });
+
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        setFormData(prev => {
+            const updates = { ...prev, [name]: value };
+            // If switching to WALK_IN, auto-set time to now
+            if (name === 'bookingType' && value === 'WALK_IN') {
+                updates.startTime = getCurrentTime();
+                updates.startDate = new Date().toISOString().split('T')[0];
+            }
+            return updates;
+        });
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setLoading(true);
+        setError('');
+        setSuccessMsg('');
+
+        // Strict Validation: Check all fields
+        const requiredFields = [
+            'bookingType', 'customerName', 'phone', 'coupleName', 'photographyName',
+            'persons', 'sessionType', 'startDate', 'startTime',
+            'depositAmount', 'initialRentPayment', 'paymentMethod',
+            'discountAmount', 'discountReference'
+        ];
+
+        const missingField = requiredFields.find(field => {
+            const value = formData[field];
+            // Check for empty string, null, undefined. Allow 0.
+            return value === '' || value === null || value === undefined;
+        });
+
+        // Deposit Validation
+        const rate = pricingSettings?.hourlyRate || 500;
+        const requiredDeposit = Number(formData.persons) * rate;
+        if (Number(formData.depositAmount) < requiredDeposit && !formData.forceDepositAccept) {
+            setError(`Deposit is lower than required (₹${requiredDeposit}). Please tick "Force Accept" to proceed.`);
+            setLoading(false);
+            return;
+        }
+
+        try {
+            const combinedStart = new Date(`${formData.startDate}T${formData.startTime}:00`);
+            const payload = {
+                ...formData,
+                startTime: combinedStart.toISOString(),
+                persons: Number(formData.persons),
+                customHours: Number(formData.customHours),
+                discountAmount: Number(formData.discountAmount),
+                depositAmount: Number(formData.depositAmount),
+                initialRentPayment: Number(formData.initialRentPayment),
+                advanceTokenAmount: Number(formData.advanceTokenAmount)
+            };
+
+            const res = await api.post('/bookings', payload);
+
+            if (res.data.success) {
+                setSuccessMsg(`Booking Created! Code: ${res.data.data.bookingCode}`);
+                setFormData({
+                    bookingType: 'WALK_IN', customerName: '', coupleName: '', photographyName: '', phone: '',
+                    persons: 1, sessionType: 'ONE_HOUR', customHours: 0, startDate: new Date().toISOString().split('T')[0],
+                    startTime: getCurrentTime(), discountAmount: 0, discountReference: '', depositAmount: 0,
+                    initialRentPayment: 0, advanceTokenAmount: 0, paymentMethod: 'CASH', forceDepositAccept: false
+                });
+                // Navigate back to dashboard after short delay
+                setTimeout(() => {
+                    navigate('/dashboard');
+                }, 2000);
+            }
+        } catch (err) {
+            console.error(err);
+            setError(err.response?.data?.error || 'Failed to create booking');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <LayoutShell title="New Booking">
+            <div className="w-full max-w-5xl mx-auto py-6">
+                <div className="bg-white rounded-[32px] shadow-sm border border-gray-100 overflow-hidden flex flex-col">
+
+                    {/* Header */}
+                    <div className="px-8 py-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+                        <div>
+                            <h2 className="text-2xl font-bold text-text-main">New Booking</h2>
+                            <p className="text-sm text-text-secondary mt-1">Create a new reservation for studio time.</p>
+                        </div>
+                    </div>
+
+                    {/* Toast Notification (Success) */}
+                    {successMsg && (
+                        <div className="fixed top-8 right-8 z-[60] bg-white border-l-4 border-green-500 rounded-xl shadow-2xl p-4 min-w-[320px] animate-in slide-in-from-right fade-in duration-300 flex items-start gap-4">
+                            <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-green-600">
+                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                </svg>
+                            </div>
+                            <div>
+                                <h4 className="font-bold text-gray-900 text-sm">Success!</h4>
+                                <p className="text-sm text-gray-600 mt-0.5">{successMsg}</p>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Form Content */}
+                    <div className="p-8">
+
+                        {error && <div className="bg-red-50 text-red-600 p-4 rounded-xl mb-6 flex items-center gap-3"><span className="w-2 h-2 rounded-full bg-red-600"></span>{error}</div>}
+
+                        <form onSubmit={handleSubmit} className="space-y-8">
+
+                            {/* Section: Booking Type */}
+                            <div>
+                                <label className="text-xs font-bold text-text-secondary uppercase tracking-wider mb-3 block">Booking Type</label>
+                                <div className="flex gap-4">
+                                    <label className={`flex-1 flex items-center justify-center gap-3 p-4 rounded-xl border cursor-pointer transition-all ${formData.bookingType === 'WALK_IN' ? 'bg-primary/10 border-primary text-black font-bold' : 'border-gray-200 text-text-secondary hover:border-primary/50'}`}>
+                                        <input type="radio" name="bookingType" value="WALK_IN" checked={formData.bookingType === 'WALK_IN'} onChange={handleChange} className="hidden" />
+                                        <span>Walk-in</span>
+                                    </label>
+                                    <label className={`flex-1 flex items-center justify-center gap-3 p-4 rounded-xl border cursor-pointer transition-all ${formData.bookingType === 'ADVANCE' ? 'bg-primary/10 border-primary text-black font-bold' : 'border-gray-200 text-text-secondary hover:border-primary/50'}`}>
+                                        <input type="radio" name="bookingType" value="ADVANCE" checked={formData.bookingType === 'ADVANCE'} onChange={handleChange} className="hidden" />
+                                        <span>Advance</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            {/* Two Column Layout */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+
+                                {/* Left Col: Customer Info */}
+                                <div className="space-y-5">
+                                    <h3 className="text-lg font-bold text-text-main border-b border-gray-100 pb-2">Customer Details</h3>
+                                    <Input label="Customer Name" name="customerName" value={formData.customerName} onChange={handleChange} required />
+                                    <Input label="Phone Number" name="phone" value={formData.phone} onChange={handleChange} required />
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <Input label="Couple Name" name="coupleName" value={formData.coupleName} onChange={handleChange} required />
+                                        <Input label="Photography Studio" name="photographyName" value={formData.photographyName} onChange={handleChange} required />
+                                    </div>
+                                </div>
+
+                                {/* Right Col: Session Info */}
+                                <div className="space-y-5">
+                                    <h3 className="text-lg font-bold text-text-main border-b border-gray-100 pb-2">Session Details</h3>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <Input label="Persons" type="number" name="persons" value={formData.persons} onChange={handleChange} required />
+
+                                        <div>
+                                            <label className="block text-xs font-bold text-text-secondary mb-1.5 uppercase tracking-wide">Session Type <span className="text-red-500">*</span></label>
+                                            <select name="sessionType" value={formData.sessionType} onChange={handleChange} className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3.5 text-sm focus:outline-none focus:border-primary transition-colors appearance-none">
+                                                <option value="ONE_HOUR">1 Hour</option>
+                                                <option value="TWO_HOUR">2 Hours</option>
+                                                <option value="THREE_HOUR">3 Hours</option>
+                                                <option value="HALF_DAY">Half Day</option>
+                                                <option value="FULL_DAY">Full Day</option>
+                                                <option value="CUSTOM">Custom Hours</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    {formData.sessionType === 'CUSTOM' && (
+                                        <Input label="Custom Hours" type="number" name="customHours" value={formData.customHours} onChange={handleChange} required />
+                                    )}
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-xs font-bold text-text-secondary mb-1.5 uppercase tracking-wide">Date <span className="text-red-500">*</span></label>
+                                            <input
+                                                type="date"
+                                                value={formData.startDate}
+                                                onChange={(e) => setFormData(prev => ({ ...prev, startDate: e.target.value }))}
+                                                required
+                                                className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3.5 text-sm font-medium text-text-main focus:outline-none focus:border-primary transition-colors hover:border-primary"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-bold text-text-secondary mb-1.5 uppercase tracking-wide">Start Time <span className="text-red-500">*</span></label>
+                                            <div className="flex gap-2">
+                                                <div className="relative flex-1">
+                                                    <select
+                                                        value={formData.startTime.split(':')[0]}
+                                                        onChange={(e) => {
+                                                            const newHour = e.target.value;
+                                                            const minute = formData.startTime.split(':')[1];
+                                                            setFormData(prev => ({ ...prev, startTime: `${newHour}:${minute}` }));
+                                                        }}
+                                                        className="w-full bg-white border border-gray-200 rounded-xl px-3 py-3.5 text-sm font-medium focus:outline-none focus:border-primary appearance-none cursor-pointer hover:border-primary transition-colors text-center"
+                                                    >
+                                                        {Array.from({ length: 24 }).map((_, i) => (
+                                                            <option key={i} value={i.toString().padStart(2, '0')}>{i.toString().padStart(2, '0')}</option>
+                                                        ))}
+                                                    </select>
+                                                    <span className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-xs text-gray-400 font-bold">H</span>
+                                                </div>
+                                                <span className="flex items-center text-gray-400 font-bold">:</span>
+                                                <div className="relative flex-1">
+                                                    <select
+                                                        value={formData.startTime.split(':')[1]}
+                                                        onChange={(e) => {
+                                                            const newMinute = e.target.value;
+                                                            const hour = formData.startTime.split(':')[0];
+                                                            setFormData(prev => ({ ...prev, startTime: `${hour}:${newMinute}` }));
+                                                        }}
+                                                        className="w-full bg-white border border-gray-200 rounded-xl px-3 py-3.5 text-sm font-medium focus:outline-none focus:border-primary appearance-none cursor-pointer hover:border-primary transition-colors text-center"
+                                                    >
+                                                        {Array.from({ length: 60 }).map((_, i) => (
+                                                            <option key={i} value={i.toString().padStart(2, '0')}>{i.toString().padStart(2, '0')}</option>
+                                                        ))}
+                                                    </select>
+                                                    <span className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-xs text-gray-400 font-bold">M</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Finance Section */}
+                            <div className="pt-4">
+                                <h3 className="text-lg font-bold text-text-main border-b border-gray-100 pb-2 mb-5">Payment & Finance</h3>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                    <div className="space-y-2">
+                                        <Input label="Deposit Amount (₹)" type="number" name="depositAmount" value={formData.depositAmount} onChange={handleChange} required />
+                                        {Number(formData.depositAmount) < (Number(formData.persons) * (pricingSettings?.hourlyRate || 500)) && (
+                                            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                                                <p className="text-xs text-yellow-700 font-bold mb-2">
+                                                    ⚠️ Warning: Deposit should be ₹{Number(formData.persons) * (pricingSettings?.hourlyRate || 500)} (₹{pricingSettings?.hourlyRate || 500}/person).
+                                                </p>
+                                                <label className="flex items-center gap-2 cursor-pointer">
+                                                    <input
+                                                        type="checkbox"
+                                                        name="forceDepositAccept"
+                                                        checked={formData.forceDepositAccept}
+                                                        onChange={(e) => setFormData(prev => ({ ...prev, forceDepositAccept: e.target.checked }))}
+                                                        className="w-4 h-4 text-black rounded focus:ring-black"
+                                                    />
+                                                    <span className="text-xs font-bold text-gray-900">Forcefully Accept Low Deposit</span>
+                                                </label>
+                                            </div>
+                                        )}
+                                    </div>
+                                    {formData.bookingType === 'ADVANCE' ? (
+                                        <Input label="Advance Token (₹)" type="number" name="advanceTokenAmount" value={formData.advanceTokenAmount} onChange={handleChange} required />
+                                    ) : (
+                                        <Input label="Initial First Payment (₹)" type="number" name="initialRentPayment" value={formData.initialRentPayment} onChange={handleChange} required />
+                                    )}
+                                    <div>
+                                        <label className="block text-xs font-bold text-text-secondary mb-1.5 uppercase tracking-wide">Payment Method <span className="text-red-500">*</span></label>
+                                        <select name="paymentMethod" value={formData.paymentMethod} onChange={handleChange} className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3.5 text-sm focus:outline-none focus:border-primary transition-colors appearance-none">
+                                            <option value="CASH">Cash</option>
+                                            <option value="UPI">UPI</option>
+                                            <option value="CARD">Card</option>
+                                            <option value="OTHER">Other</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div className="grid grid-cols-2 gap-6 mt-4">
+                                    <Input label="Discount (₹)" type="number" name="discountAmount" value={formData.discountAmount} onChange={handleChange} required />
+                                    <Input label="Discount Note" name="discountReference" value={formData.discountReference} onChange={handleChange} required />
+                                </div>
+                            </div>
+
+                            {/* Footer Actions */}
+                            <div className="p-6 border-t border-gray-100 bg-gray-50/50 flex justify-end gap-3 rounded-b-[32px]">
+                                <button type="button" onClick={() => navigate('/dashboard')} className="px-6 py-3 rounded-xl font-bold text-text-secondary hover:text-text-main hover:bg-gray-100 transition-colors">
+                                    Cancel
+                                </button>
+                                <button onClick={handleSubmit} disabled={loading} className="px-8 py-3 bg-[#8F1E22] text-white rounded-xl font-bold hover:bg-gray-800 hover:scale-[1.02] active:scale-95 transition-all shadow-lg flex items-center gap-2">
+                                    {loading ? 'Processing...' : 'Create Booking'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </LayoutShell>
+    );
+};
+
+const Input = ({ label, name, type = "text", value, onChange, required = false }) => (
+    <div>
+        <label className="block text-xs font-bold text-text-secondary mb-1.5 uppercase tracking-wide">
+            {label} {required && <span className="text-red-500">*</span>}
+        </label>
+        <input
+            type={type}
+            name={name}
+            className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3.5 text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all placeholder:text-gray-300"
+            placeholder={`Enter ${label.toLowerCase()}`}
+            value={value}
+            onChange={onChange}
+            required={required}
+        />
+    </div>
+);
+
+
+export default NewBookingPage;

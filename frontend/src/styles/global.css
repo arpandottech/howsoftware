@@ -1,0 +1,159 @@
+/* src/styles/global.css */
+
+/* 1. Import Tailwind (if using usage based imports, otherwise ensure it's loaded via postcss) */
+@import "tailwindcss";
+/* Font imported in index.html */
+
+/* 2. Define CSS Variables mapped to our Theme */
+:root {
+    /* Colors - House of Wedding Theme */
+    --color-primary: #800020;
+    /* Burgundy Red */
+    --color-secondary: #000000;
+    /* Pure Black for contrast */
+    --color-bg: #F6F6FA;
+    /* Soft Cloud White background */
+    --color-surface: #FFFFFF;
+    /* Pure White Surface */
+    --color-success: #27AE60;
+    --color-warning: #FFA000;
+    --color-danger: #EB5757;
+    --color-border: #F1F1F1;
+
+    /* Text Colors */
+    --color-text-main: #1C1C1C;
+    /* Soft Black */
+    --color-text-secondary: #A0AEC0;
+    /* Gray */
+    --color-text-subtle: #CBD5E0;
+
+    /* Typography */
+    --font-family: 'Poppins', sans-serif;
+
+    /* Radius */
+    --radius-base: 12px;
+    --radius-medium: 20px;
+    --radius-large: 24px;
+
+    /* Shadows */
+    --shadow-card: 0px 4px 50px rgba(0, 0, 0, 0.03);
+    /* Very subtle, clean shadow */
+    --shadow-modal: 0px 20px 50px rgba(0, 0, 0, 0.1);
+}
+
+/* 3. Global Resets & Body Styles */
+/* Force Poppins on EVERYTHING */
+* {
+    font-family: 'Poppins', sans-serif !important;
+}
+
+html {
+    background-color: #ffffff;
+}
+
+body,
+#root {
+    margin: 0;
+    padding: 0;
+    background-color: var(--color-bg);
+    color: var(--color-text-main);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    min-height: 100vh;
+}
+
+/* Optional: Scrollbar styling for a premium feel */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #CBD5E0;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    /* background: #A0AEC0; */
+}
+
+/* --- DATE PICKER OVERRIDES (Yellow Finance Theme) --- */
+.react-datepicker {
+    font-family: 'Poppins', sans-serif !important;
+    border: none !important;
+    border-radius: 20px !important;
+    box-shadow: 0px 10px 40px rgba(0, 0, 0, 0.1) !important;
+    padding: 10px !important;
+    background-color: #fff !important;
+}
+
+.react-datepicker__header {
+    background-color: #fff !important;
+    border-bottom: none !important;
+    padding-top: 10px !important;
+}
+
+.react-datepicker__current-month {
+    font-weight: 700 !important;
+    color: var(--color-text-main) !important;
+    margin-bottom: 10px !important;
+}
+
+.react-datepicker__day-name {
+    color: var(--color-text-secondary) !important;
+    font-weight: 500 !important;
+    width: 2.5rem !important;
+}
+
+.react-datepicker__day {
+    width: 2.5rem !important;
+    line-height: 2.5rem !important;
+    border-radius: 50% !important;
+    margin: 0.1rem !important;
+    color: var(--color-text-main) !important;
+    font-weight: 500 !important;
+}
+
+.react-datepicker__day:hover {
+    background-color: var(--color-bg) !important;
+    border-radius: 50% !important;
+}
+
+.react-datepicker__day--selected,
+.react-datepicker__day--in-selecting-range,
+.react-datepicker__day--in-range {
+    background-color: var(--color-primary) !important;
+    color: #000 !important;
+    font-weight: 700 !important;
+    border-radius: 50% !important;
+}
+
+.react-datepicker__day--in-range {
+    border-radius: 0 !important;
+    opacity: 0.8 !important;
+}
+
+.react-datepicker__day--range-start {
+    border-top-left-radius: 50% !important;
+    border-bottom-left-radius: 50% !important;
+    opacity: 1 !important;
+}
+
+.react-datepicker__day--range-end {
+    border-top-right-radius: 50% !important;
+    border-bottom-right-radius: 50% !important;
+    opacity: 1 !important;
+}
+
+.react-datepicker__day--keyboard-selected {
+    background-color: transparent !important;
+    /* Remove default blue focus */
+    color: var(--color-text-main) !important;
+}
+
+.react-datepicker__navigation {
+    top: 20px !important;
+}
