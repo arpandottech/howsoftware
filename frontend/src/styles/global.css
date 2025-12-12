@@ -49,6 +49,8 @@
 
 html {
     background-color: #ffffff;
+    touch-action: manipulation;
+    -webkit-text-size-adjust: 100%;
 }
 
 body,
@@ -76,9 +78,7 @@ body,
     border-radius: 4px;
 }
 
-::-webkit-scrollbar-thumb:hover {
-    /* background: #A0AEC0; */
-}
+
 
 /* --- DATE PICKER OVERRIDES (Yellow Finance Theme) --- */
 .react-datepicker {

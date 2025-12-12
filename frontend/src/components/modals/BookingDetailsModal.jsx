@@ -361,9 +361,7 @@ const BookingDetailsModal = ({ booking, isOpen, onClose, onSuccess }) => {
                                 </div>
                             )}
 
-                            import SwipeButton from '../ui/SwipeButton'; // Add Import
 
-                            // ... inside the component ...
 
                             {/* Action Button - Replaced with SwipeButton */}
                             <div className="pt-2">

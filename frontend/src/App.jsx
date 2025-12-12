@@ -13,7 +13,43 @@ import ProfilePage from './pages/ProfilePage';
 import SettingsPage from './pages/SettingsPage';
 import ProtectedLayout from './components/layout/ProtectedLayout';
 
+import { useEffect } from 'react'; // Ensure React import is updated if needed, though usually automatic in new Vite. 
+// However, the file already imports useContext, so we need to add useEffect to the first line import.
+
 function App() {
+  // Prevent Zooming on Mobile
+  useEffect(() => {
+    const handleTouchStart = (e) => {
+      if (e.touches.length > 1) {
+        e.preventDefault(); // Prevent pinch zoom
+      }
+    };
+
+    const handleTouchMove = (e) => {
+      if (e.touches.length > 1) {
+        e.preventDefault(); // Prevent pinch zoom
+      }
+    };
+
+    let lastTouchEnd = 0;
+    const handleTouchEnd = (e) => {
+      const now = (new Date()).getTime();
+      if (now - lastTouchEnd <= 300) {
+        e.preventDefault(); // Prevent double-tap zoom
+      }
+      lastTouchEnd = now;
+    };
+
+    document.addEventListener('touchstart', handleTouchStart, { passive: false });
+    document.addEventListener('touchmove', handleTouchMove, { passive: false });
+    document.addEventListener('touchend', handleTouchEnd, { passive: false });
+
+    return () => {
+      document.removeEventListener('touchstart', handleTouchStart);
+      document.removeEventListener('touchmove', handleTouchMove);
+      document.removeEventListener('touchend', handleTouchEnd);
+    };
+  }, []);
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
