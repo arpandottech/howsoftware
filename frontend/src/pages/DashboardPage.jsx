@@ -26,21 +26,37 @@ const DashboardPage = () => {
                 if (res.data.success) {
                     const bookings = res.data.data;
                     setAllBookings(bookings); // Save full list
-                    let today = 0, yesterday = 0, tomorrow = 0;
-
-                    bookings.forEach(b => {
-                        const date = parseISO(b.startTime); // Assuming startDate is ISO string
-                        if (isToday(date)) today++;
-                        else if (isYesterday(date)) yesterday++;
-                        else if (isTomorrow(date)) tomorrow++;
-                    });
-                    setBookingStats({ today, yesterday, tomorrow });
-
-                    // PURE DEBUG: No Filtering. Just show everything sorted by date.
-                    console.log("Total bookings fetched:", bookings.length);
+                    let todayCount = 0;
+                    let inSessionTodayCount = 0;
+                    let totalInSessionCount = 0;
 
                     const todayDate = new Date();
                     todayDate.setHours(0, 0, 0, 0);
+
+                    bookings.forEach(b => {
+                        const date = parseISO(b.startTime);
+                        const isTodayDate = isToday(date);
+
+                        if (isTodayDate) {
+                            todayCount++;
+                            if (b.status === 'IN_SESSION') {
+                                inSessionTodayCount++;
+                            }
+                        }
+
+                        if (b.status === 'IN_SESSION') {
+                            totalInSessionCount++;
+                        }
+                    });
+
+                    setBookingStats({
+                        today: todayCount,
+                        inSessionToday: inSessionTodayCount,
+                        totalInSession: totalInSessionCount
+                    });
+
+                    // PURE DEBUG: No Filtering. Just show everything sorted by date.
+                    console.log("Total bookings fetched:", bookings.length);
 
                     const upcoming = bookings
                         .filter(b => {
@@ -77,19 +93,25 @@ const DashboardPage = () => {
             */}
             {/* STATS CARDS: Full Width */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-                <StatsCard
-                    title="Yesterday's Bookings"
-                    count={bookingStats.yesterday}
-                />
-                <StatsCard
-                    title="Today's Bookings"
-                    count={bookingStats.today}
-                    variant="black"
-                />
-                <StatsCard
-                    title="Tomorrow's Bookings"
-                    count={bookingStats.tomorrow}
-                />
+                <div onClick={() => navigate('/bookings?filter=TODAY&status=IN_SESSION')} className="cursor-pointer">
+                    <StatsCard
+                        title="In Session"
+                        count={bookingStats.inSessionToday}
+                    />
+                </div>
+                <div onClick={() => navigate('/bookings?filter=TODAY')} className="cursor-pointer">
+                    <StatsCard
+                        title="Today's Bookings"
+                        count={bookingStats.today}
+                        variant="black"
+                    />
+                </div>
+                <div onClick={() => navigate('/bookings?status=IN_SESSION')} className="cursor-pointer">
+                    <StatsCard
+                        title="Checkout"
+                        count={bookingStats.totalInSession}
+                    />
+                </div>
             </div>
 
             <div className="flex flex-col xl:flex-row gap-8">

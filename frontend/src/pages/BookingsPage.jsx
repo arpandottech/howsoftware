@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import LayoutShell from '../components/ui/LayoutShell';
 import Card from '../components/ui/Card';
 import api from '../api/axios';
@@ -30,15 +31,30 @@ const BookingsPage = () => {
         }
     };
 
+    const [searchParams] = useSearchParams();
+
     useEffect(() => {
         fetchBookings();
     }, []);
 
-    // Apply Filter when filterType or allBookings changes
+    // Sync state with URL params on mount/update
+    useEffect(() => {
+        const filterParam = searchParams.get('filter');
+        const statusParam = searchParams.get('status');
+
+        if (filterParam) {
+            setFilterType(filterParam);
+        }
+        // If status param exists (e.g. IN_SESSION), we might want to store it in a state or apply it directly
+        // We'll handle it in the filtering effect below
+    }, [searchParams]);
+
+    // Apply Filter when filterType, searchParams, or allBookings changes
     useEffect(() => {
         const today = startOfToday();
         let result = allBookings;
 
+        // 1. Date Filter
         switch (filterType) {
             case 'TODAY':
                 result = allBookings.filter(b => isSameDay(parseISO(b.startTime), today));
@@ -54,9 +70,16 @@ const BookingsPage = () => {
                 result = allBookings;
                 break;
         }
+
+        // 2. Status Filter (from URL mainly, for "Checkout" / "In Session" boxes)
+        const statusParam = searchParams.get('status');
+        if (statusParam) {
+            result = result.filter(b => b.status === statusParam);
+        }
+
         setFilteredBookings(result);
         setCurrentPage(1); // Reset to first page on filter change
-    }, [filterType, allBookings]);
+    }, [filterType, allBookings, searchParams]);
 
     // Pagination
     const indexOfLastItem = currentPage * itemsPerPage;
