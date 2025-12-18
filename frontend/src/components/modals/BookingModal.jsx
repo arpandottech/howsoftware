@@ -26,12 +26,20 @@ const BookingModal = ({ isOpen, onClose }) => {
         customHours: 0,
         startDate: new Date().toISOString().split('T')[0],
         startTime: getCurrentTime(),
-        discountAmount: 0,
-        discountReference: '',
+
         depositAmount: 0,
         initialRentPayment: 0,
         paymentMethod: 'CASH'
     });
+
+    // Guard Clause: Don't render if not open
+    if (!isOpen) return null;
+
+    useEffect(() => {
+        if (isOpen) {
+            // Reset or init logic logic if needed
+        }
+    }, [isOpen]);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -55,8 +63,7 @@ const BookingModal = ({ isOpen, onClose }) => {
         const requiredFields = [
             'bookingType', 'customerName', 'phone', 'coupleName', 'photographyName',
             'persons', 'sessionType', 'startDate', 'startTime',
-            'depositAmount', 'initialRentPayment', 'paymentMethod',
-            'discountAmount', 'discountReference'
+            'depositAmount', 'initialRentPayment', 'paymentMethod'
         ];
 
         const missingField = requiredFields.find(field => {
@@ -85,7 +92,7 @@ const BookingModal = ({ isOpen, onClose }) => {
                 startTime: combinedStart.toISOString(),
                 persons: Number(formData.persons),
                 customHours: Number(formData.customHours),
-                discountAmount: Number(formData.discountAmount),
+
                 depositAmount: Number(formData.depositAmount),
                 initialRentPayment: Number(formData.initialRentPayment)
             };
@@ -97,7 +104,7 @@ const BookingModal = ({ isOpen, onClose }) => {
                 setFormData({
                     bookingType: 'WALK_IN', customerName: '', coupleName: '', photographyName: '', phone: '',
                     persons: 1, sessionType: 'ONE_HOUR', customHours: 0, startDate: new Date().toISOString().split('T')[0],
-                    startTime: getCurrentTime(), discountAmount: 0, discountReference: '', depositAmount: 0,
+                    startTime: getCurrentTime(), depositAmount: 0,
                     initialRentPayment: 0, paymentMethod: 'CASH'
                 });
                 setTimeout(() => {
@@ -207,7 +214,7 @@ const BookingModal = ({ isOpen, onClose }) => {
                                         <label className="block text-xs font-bold text-text-secondary mb-1.5 uppercase tracking-wide">Date <span className="text-red-500">*</span></label>
                                         <DatePicker
                                             selected={formData.startDate ? new Date(formData.startDate) : null}
-                                            onChange={(date) => setFormData(prev => ({ ...prev, startDate: date.toISOString().split('T')[0] }))}
+                                            onChange={(date) => setFormData(prev => ({ ...prev, startDate: date ? date.toISOString().split('T')[0] : '' }))}
                                             dateFormat="dd MMM yyyy"
                                             customInput={<CustomFormDateInput placeholder="Select Date" />}
                                             wrapperClassName="w-full"
@@ -218,10 +225,10 @@ const BookingModal = ({ isOpen, onClose }) => {
                                         <div className="flex gap-2">
                                             <div className="relative flex-1">
                                                 <select
-                                                    value={formData.startTime.split(':')[0]}
+                                                    value={formData.startTime ? formData.startTime.split(':')[0] : '00'}
                                                     onChange={(e) => {
                                                         const newHour = e.target.value;
-                                                        const minute = formData.startTime.split(':')[1];
+                                                        const minute = formData.startTime ? formData.startTime.split(':')[1] : '00';
                                                         setFormData(prev => ({ ...prev, startTime: `${newHour}:${minute}` }));
                                                     }}
                                                     className="w-full bg-white border border-gray-200 rounded-xl px-3 py-3.5 text-sm font-medium focus:outline-none focus:border-primary appearance-none cursor-pointer hover:border-primary transition-colors text-center"
@@ -235,10 +242,10 @@ const BookingModal = ({ isOpen, onClose }) => {
                                             <span className="flex items-center text-gray-400 font-bold">:</span>
                                             <div className="relative flex-1">
                                                 <select
-                                                    value={formData.startTime.split(':')[1]}
+                                                    value={formData.startTime ? formData.startTime.split(':')[1] : '00'}
                                                     onChange={(e) => {
                                                         const newMinute = e.target.value;
-                                                        const hour = formData.startTime.split(':')[0];
+                                                        const hour = formData.startTime ? formData.startTime.split(':')[0] : '00';
                                                         setFormData(prev => ({ ...prev, startTime: `${hour}:${newMinute}` }));
                                                     }}
                                                     className="w-full bg-white border border-gray-200 rounded-xl px-3 py-3.5 text-sm font-medium focus:outline-none focus:border-primary appearance-none cursor-pointer hover:border-primary transition-colors text-center"
@@ -271,10 +278,7 @@ const BookingModal = ({ isOpen, onClose }) => {
                                     </select>
                                 </div>
                             </div>
-                            <div className="grid grid-cols-2 gap-6 mt-4">
-                                <Input label="Discount (₹)" type="number" name="discountAmount" value={formData.discountAmount} onChange={handleChange} required />
-                                <Input label="Discount Note" name="discountReference" value={formData.discountReference} onChange={handleChange} required />
-                            </div>
+
                         </div>
 
                     </form>

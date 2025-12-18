@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { createBooking, endSession, getTodayBookings, getAllBookings, checkIn } = require('../controllers/bookingController');
+const { createBooking, endSession, getTodayBookings, getAllBookings, checkIn, updateBooking } = require('../controllers/bookingController');
 // const { protect } = require('../middleware/auth'); // Optional depending on auth requirements
 
 // Assuming we want this protected? The prompt dind't specify, but usually booking creation is internal.
@@ -19,5 +19,6 @@ router.get('/', getAllBookings); // Removed protect for debugging
 router.get('/today', protect, getTodayBookings);
 router.post('/:id/check-in', protect, checkIn);
 router.post('/:id/end-session', protect, endSession);
+router.put('/:id', protect, updateBooking);
 
 module.exports = router;

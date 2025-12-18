@@ -65,7 +65,7 @@ const SwipeButton = ({ onComplete, mainText = "Slide to Pay", amount, disabled =
 
     return (
         <div
-            className={`relative h-14 rounded-full overflow-hidden select-none transition-all duration-300 ${completed ? 'bg-green-600' : 'bg-green-500'} ${disabled ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer shadow-lg shadow-green-500/30'}`}
+            className={`relative h-14 rounded-full overflow-hidden select-none touch-none transition-all duration-300 ${completed ? 'bg-green-600' : 'bg-green-500'} ${disabled ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer shadow-lg shadow-green-500/30'}`}
             ref={containerRef}
             onMouseMove={!disabled ? onMouseMove : undefined}
             onMouseUp={!disabled ? onMouseUp : undefined}

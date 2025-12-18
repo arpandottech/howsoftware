@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import DatePicker from 'react-datepicker';
+import "react-datepicker/dist/react-datepicker.css";
 
 import api from '../api/axios';
 import LayoutShell from '../components/ui/LayoutShell';
@@ -43,8 +45,7 @@ const NewBookingPage = () => {
         customHours: 0,
         startDate: new Date().toISOString().split('T')[0],
         startTime: getCurrentTime(),
-        discountAmount: 0,
-        discountReference: '',
+
         depositAmount: 0,
         initialRentPayment: 0,
         advanceTokenAmount: 0,
@@ -75,8 +76,7 @@ const NewBookingPage = () => {
         const requiredFields = [
             'bookingType', 'customerName', 'phone', 'coupleName', 'photographyName',
             'persons', 'sessionType', 'startDate', 'startTime',
-            'depositAmount', 'initialRentPayment', 'paymentMethod',
-            'discountAmount', 'discountReference'
+            'depositAmount', 'initialRentPayment', 'paymentMethod'
         ];
 
         const missingField = requiredFields.find(field => {
@@ -101,7 +101,7 @@ const NewBookingPage = () => {
                 startTime: combinedStart.toISOString(),
                 persons: Number(formData.persons),
                 customHours: Number(formData.customHours),
-                discountAmount: Number(formData.discountAmount),
+
                 depositAmount: Number(formData.depositAmount),
                 initialRentPayment: Number(formData.initialRentPayment),
                 advanceTokenAmount: Number(formData.advanceTokenAmount)
@@ -114,7 +114,6 @@ const NewBookingPage = () => {
                 setFormData({
                     bookingType: 'WALK_IN', customerName: '', coupleName: '', photographyName: '', phone: '',
                     persons: 1, sessionType: 'ONE_HOUR', customHours: 0, startDate: new Date().toISOString().split('T')[0],
-                    startTime: getCurrentTime(), discountAmount: 0, discountReference: '', depositAmount: 0,
                     initialRentPayment: 0, advanceTokenAmount: 0, paymentMethod: 'CASH', forceDepositAccept: false
                 });
                 // Navigate back to dashboard after short delay
@@ -218,12 +217,12 @@ const NewBookingPage = () => {
                                     <div className="grid grid-cols-2 gap-4">
                                         <div>
                                             <label className="block text-xs font-bold text-text-secondary mb-1.5 uppercase tracking-wide">Date <span className="text-red-500">*</span></label>
-                                            <input
-                                                type="date"
-                                                value={formData.startDate}
-                                                onChange={(e) => setFormData(prev => ({ ...prev, startDate: e.target.value }))}
-                                                required
-                                                className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3.5 text-sm font-medium text-text-main focus:outline-none focus:border-primary transition-colors hover:border-primary"
+                                            <DatePicker
+                                                selected={formData.startDate ? new Date(formData.startDate) : null}
+                                                onChange={(date) => setFormData(prev => ({ ...prev, startDate: date ? date.toISOString().split('T')[0] : '' }))}
+                                                dateFormat="dd MMM yyyy"
+                                                customInput={<CustomFormDateInput placeholder="Select Date" />}
+                                                wrapperClassName="w-full"
                                             />
                                         </div>
                                         <div>
@@ -231,10 +230,10 @@ const NewBookingPage = () => {
                                             <div className="flex gap-2">
                                                 <div className="relative flex-1">
                                                     <select
-                                                        value={formData.startTime.split(':')[0]}
+                                                        value={formData.startTime ? formData.startTime.split(':')[0] : '00'}
                                                         onChange={(e) => {
                                                             const newHour = e.target.value;
-                                                            const minute = formData.startTime.split(':')[1];
+                                                            const minute = formData.startTime ? formData.startTime.split(':')[1] : '00';
                                                             setFormData(prev => ({ ...prev, startTime: `${newHour}:${minute}` }));
                                                         }}
                                                         className="w-full bg-white border border-gray-200 rounded-xl px-3 py-3.5 text-sm font-medium focus:outline-none focus:border-primary appearance-none cursor-pointer hover:border-primary transition-colors text-center"
@@ -248,10 +247,10 @@ const NewBookingPage = () => {
                                                 <span className="flex items-center text-gray-400 font-bold">:</span>
                                                 <div className="relative flex-1">
                                                     <select
-                                                        value={formData.startTime.split(':')[1]}
+                                                        value={formData.startTime ? formData.startTime.split(':')[1] : '00'}
                                                         onChange={(e) => {
                                                             const newMinute = e.target.value;
-                                                            const hour = formData.startTime.split(':')[0];
+                                                            const hour = formData.startTime ? formData.startTime.split(':')[0] : '00';
                                                             setFormData(prev => ({ ...prev, startTime: `${hour}:${newMinute}` }));
                                                         }}
                                                         className="w-full bg-white border border-gray-200 rounded-xl px-3 py-3.5 text-sm font-medium focus:outline-none focus:border-primary appearance-none cursor-pointer hover:border-primary transition-colors text-center"
@@ -307,10 +306,7 @@ const NewBookingPage = () => {
                                         </select>
                                     </div>
                                 </div>
-                                <div className="grid grid-cols-2 gap-6 mt-4">
-                                    <Input label="Discount (₹)" type="number" name="discountAmount" value={formData.discountAmount} onChange={handleChange} required />
-                                    <Input label="Discount Note" name="discountReference" value={formData.discountReference} onChange={handleChange} required />
-                                </div>
+
                             </div>
 
                             {/* Footer Actions */}
@@ -330,6 +326,7 @@ const NewBookingPage = () => {
     );
 };
 
+// Reusable Input Component
 const Input = ({ label, name, type = "text", value, onChange, required = false }) => (
     <div>
         <label className="block text-xs font-bold text-text-secondary mb-1.5 uppercase tracking-wide">
@@ -347,5 +344,26 @@ const Input = ({ label, name, type = "text", value, onChange, required = false }
     </div>
 );
 
+// Custom Date Input for DatePicker
+const CustomFormDateInput = React.forwardRef(({ value, onClick, onChange, placeholder }, ref) => (
+    <div className="relative w-full group">
+        <input
+            value={value}
+            onClick={onClick}
+            onChange={onChange}
+            ref={ref}
+            placeholder={placeholder}
+            className="w-full bg-white border border-gray-200 rounded-xl pl-4 pr-10 py-3.5 text-sm font-medium text-text-main placeholder:text-gray-400 focus:outline-none focus:border-primary hover:border-primary transition-all cursor-pointer"
+        />
+        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 group-hover:text-text-main transition-colors">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="16" y1="2" x2="16" y2="6"></line>
+                <line x1="8" y1="2" x2="8" y2="6"></line>
+                <line x1="3" y1="10" x2="21" y2="10"></line>
+            </svg>
+        </div>
+    </div>
+));
 
 export default NewBookingPage;

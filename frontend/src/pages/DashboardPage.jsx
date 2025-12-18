@@ -428,5 +428,54 @@ const BookingItem = ({ name, mobile, persons, colorIndex }) => {
     );
 };
 
-export default DashboardPage;
+// --- ERROR BOUNDARY ---
+class ErrorBoundary extends React.Component {
+    constructor(props) {
+        super(props);
+        this.state = { hasError: false, error: null, errorInfo: null };
+    }
+
+    static getDerivedStateFromError(error) {
+        return { hasError: true, error };
+    }
+
+    componentDidCatch(error, errorInfo) {
+        console.error("Dashboard Error:", error, errorInfo);
+        this.setState({ errorInfo });
+    }
+
+    render() {
+        if (this.state.hasError) {
+            return (
+                <div className="p-8 bg-red-50 min-h-screen flex flex-col items-center justify-center text-center">
+                    <h2 className="text-2xl font-bold text-red-700 mb-4">Something went wrong on the Dashboard.</h2>
+                    <p className="text-red-900 bg-red-100 p-4 rounded-xl border border-red-200 font-mono text-sm max-w-2xl overflow-auto text-left">
+                        {this.state.error?.toString()}
+                    </p>
+                    <button
+                        onClick={() => window.location.reload()}
+                        className="mt-6 px-6 py-3 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700"
+                    >
+                        Reload Page
+                    </button>
+                    <details className="mt-4 text-xs text-left max-w-2xl text-gray-500">
+                        <summary>Stack Trace</summary>
+                        <pre className="mt-2 p-2 bg-gray-100 rounded">{this.state.errorInfo?.componentStack}</pre>
+                    </details>
+                </div>
+            );
+        }
+
+        return this.props.children;
+    }
+}
+
+export default function WrappedDashboardPage() {
+    return (
+        <ErrorBoundary>
+            <DashboardPage />
+        </ErrorBoundary>
+    );
+}
+
 export { MonthIcon };

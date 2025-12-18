@@ -54,12 +54,25 @@ const LayoutShell = ({ children, title }) => {
     // Sync Google Translate Cookie with User Language
     React.useEffect(() => {
         if (user && user.language) {
-            const targetLang = user.language;
-            const cookieValue = `/en/${targetLang}`;
-            const currentCookie = document.cookie.split('; ').find(row => row.startsWith('googtrans='));
-            if (!currentCookie || currentCookie.split('=')[1] !== cookieValue) {
-                document.cookie = `googtrans=/en/${targetLang}; path=/; domain=${window.location.hostname}`;
-                document.cookie = `googtrans=/en/${targetLang}; path=/`;
+            try {
+                const targetLang = user.language;
+                const cookieValue = `/en/${targetLang}`;
+                // Safe cookie parsing
+                const cookies = document.cookie ? document.cookie.split('; ') : [];
+                const currentCookie = cookies.find(row => row && row.startsWith('googtrans='));
+
+                if (!currentCookie) {
+                    document.cookie = `googtrans=/en/${targetLang}; path=/; domain=${window.location.hostname}`;
+                    document.cookie = `googtrans=/en/${targetLang}; path=/`;
+                } else {
+                    const parts = currentCookie.split('=');
+                    if (parts.length > 1 && parts[1] !== cookieValue) {
+                        document.cookie = `googtrans=/en/${targetLang}; path=/; domain=${window.location.hostname}`;
+                        document.cookie = `googtrans=/en/${targetLang}; path=/`;
+                    }
+                }
+            } catch (err) {
+                console.error("Cookie sync error:", err);
             }
         }
     }, [user?.language]);
