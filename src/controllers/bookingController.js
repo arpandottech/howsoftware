@@ -19,7 +19,6 @@ exports.createBooking = async (req, res, next) => {
             startTime,
             discountAmount = 0,
             discountReference,
-            depositAmount = 0,
             initialRentPayment = 0,
             advanceTokenAmount = 0,
             paymentMethod
@@ -94,7 +93,6 @@ exports.createBooking = async (req, res, next) => {
         }
 
         const rentDue = netAmount - rentPaid;
-        const valDepositAmount = Number(depositAmount) || 0;
 
         // 7. Booking Code Generation
         // Format: HOW-YYYYMMDD-XXXX
@@ -149,8 +147,6 @@ exports.createBooking = async (req, res, next) => {
                 rentPaid,
                 rentDue,
                 rentDue,
-                depositCollected: valDepositAmount,
-                depositReturned: 0,
                 advanceTokenAmount: valAdvanceToken
             },
             createdBy: req.user ? req.user._id : null, // If authenticated
@@ -158,16 +154,6 @@ exports.createBooking = async (req, res, next) => {
         });
 
         // 10. Create Payments if needed
-        // Deposit Payment
-        if (valDepositAmount > 0) {
-            await Payment.create({
-                bookingId: booking._id,
-                type: 'DEPOSIT_IN',
-                method: paymentMethod || 'CASH',
-                amount: valDepositAmount,
-                createdBy: req.user ? req.user._id : null
-            });
-        }
 
         // Rent Payment
         if (rentPaid > 0) {
@@ -197,7 +183,6 @@ exports.checkIn = async (req, res, next) => {
     try {
         const {
             collectedRent = 0,
-            securityDeposit = 0,
             paymentMethod
         } = req.body;
 
@@ -227,16 +212,6 @@ exports.checkIn = async (req, res, next) => {
             booking.finance.rentPaid += Number(collectedRent);
         }
 
-        if (Number(securityDeposit) > 0) {
-            await Payment.create({
-                bookingId: booking._id,
-                type: 'DEPOSIT_IN',
-                method: paymentMethod || 'CASH',
-                amount: Number(securityDeposit),
-                createdBy: req.user ? req.user._id : null
-            });
-            booking.finance.depositCollected += Number(securityDeposit);
-        }
 
         // 2. Update Stats
         booking.finance.rentDue = booking.finance.netAmount - booking.finance.rentPaid;
@@ -264,7 +239,6 @@ exports.endSession = async (req, res, next) => {
         const {
             exitTime,
             extraRentPayment = 0,
-            depositReturnAmount = 0,
             discountAmount,
             discountReference,
             manualOvertimeAmount,
@@ -356,19 +330,6 @@ exports.endSession = async (req, res, next) => {
             booking.finance.rentDue = booking.finance.netAmount - booking.finance.rentPaid;
         }
 
-        // 5. Deposit Return
-        const returnDeposit = Number(depositReturnAmount) || 0;
-        if (returnDeposit > 0) {
-            await Payment.create({
-                bookingId: booking._id,
-                type: 'DEPOSIT_OUT', // Returning money to customer
-                method: paymentMethod || 'CASH', // Verify if 'method' works for outbound? usually yes
-                amount: returnDeposit,
-                createdBy: req.user ? req.user._id : null
-            });
-
-            booking.finance.depositReturned += returnDeposit;
-        }
 
         // 6. Update Status
         // If fully paid, mark completed.
@@ -408,7 +369,7 @@ exports.getTodayBookings = async (req, res, next) => {
 
         const bookings = await Booking.find({
             startTime: { $gte: startOfDay, $lte: endOfDay }
-        }).sort({ startTime: 1 });
+        }).sort({ startTime: -1 });
 
         res.status(200).json({
             success: true,
@@ -425,7 +386,7 @@ exports.getTodayBookings = async (req, res, next) => {
 // @access  Protected
 exports.getAllBookings = async (req, res, next) => {
     try {
-        const bookings = await Booking.find().sort({ startTime: 1 });
+        const bookings = await Booking.find().sort({ startTime: -1 });
 
         res.status(200).json({
             success: true,

@@ -22,7 +22,7 @@ const BookingsPage = () => {
             if (res.data.success) {
                 // Sort by Date descending (newest first) by default, or ascending for upcoming?
                 // User probably wants to see relevant filtered items. Let's do Ascending by default for better calendar feel.
-                const sorted = res.data.data.sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
+                const sorted = res.data.data.sort((a, b) => new Date(b.startTime) - new Date(a.startTime));
                 setAllBookings(sorted);
                 setFilteredBookings(sorted);
             }
@@ -193,7 +193,7 @@ const BookingsPage = () => {
                                             </td>
                                             <td className="p-4 font-medium text-gray-600">{booking.persons}</td>
                                             <td className="p-4 font-bold">
-                                                {new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(booking.totalAmount || booking.initialRentPayment || 0)}
+                                                {new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(booking.finance?.netAmount || 0)}
                                             </td>
                                             <td className="p-4">
                                                 <span className={`px-2.5 py-1 rounded-full text-xs font-bold border ${booking.status === 'CONFIRMED' ? 'bg-green-100 text-green-700 border-green-200' :

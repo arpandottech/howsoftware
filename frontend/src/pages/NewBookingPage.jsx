@@ -46,11 +46,9 @@ const NewBookingPage = () => {
         startDate: new Date().toISOString().split('T')[0],
         startTime: getCurrentTime(),
 
-        depositAmount: 0,
         initialRentPayment: 0,
         advanceTokenAmount: 0,
-        paymentMethod: 'CASH',
-        forceDepositAccept: false
+        paymentMethod: 'CASH'
     });
 
     const handleChange = (e) => {
@@ -76,7 +74,7 @@ const NewBookingPage = () => {
         const requiredFields = [
             'bookingType', 'customerName', 'phone', 'coupleName', 'photographyName',
             'persons', 'sessionType', 'startDate', 'startTime',
-            'depositAmount', 'initialRentPayment', 'paymentMethod'
+            'initialRentPayment', 'paymentMethod'
         ];
 
         const missingField = requiredFields.find(field => {
@@ -85,14 +83,7 @@ const NewBookingPage = () => {
             return value === '' || value === null || value === undefined;
         });
 
-        // Deposit Validation
-        const rate = pricingSettings?.hourlyRate || 500;
-        const requiredDeposit = Number(formData.persons) * rate;
-        if (Number(formData.depositAmount) < requiredDeposit && !formData.forceDepositAccept) {
-            setError(`Deposit is lower than required (₹${requiredDeposit}). Please tick "Force Accept" to proceed.`);
-            setLoading(false);
-            return;
-        }
+        // Deposit Validation logic removed
 
         try {
             const combinedStart = new Date(`${formData.startDate}T${formData.startTime}:00`);
@@ -102,7 +93,7 @@ const NewBookingPage = () => {
                 persons: Number(formData.persons),
                 customHours: Number(formData.customHours),
 
-                depositAmount: Number(formData.depositAmount),
+                customHours: Number(formData.customHours),
                 initialRentPayment: Number(formData.initialRentPayment),
                 advanceTokenAmount: Number(formData.advanceTokenAmount)
             };
@@ -114,7 +105,7 @@ const NewBookingPage = () => {
                 setFormData({
                     bookingType: 'WALK_IN', customerName: '', coupleName: '', photographyName: '', phone: '',
                     persons: 1, sessionType: 'ONE_HOUR', customHours: 0, startDate: new Date().toISOString().split('T')[0],
-                    initialRentPayment: 0, advanceTokenAmount: 0, paymentMethod: 'CASH', forceDepositAccept: false
+                    initialRentPayment: 0, advanceTokenAmount: 0, paymentMethod: 'CASH'
                 });
                 // Navigate back to dashboard after short delay
                 setTimeout(() => {
@@ -272,41 +263,23 @@ const NewBookingPage = () => {
                                 <h3 className="text-lg font-bold text-text-main border-b border-gray-100 pb-2 mb-5">Payment & Finance</h3>
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                     <div className="space-y-2">
-                                        <Input label="Deposit Amount (₹)" type="number" name="depositAmount" value={formData.depositAmount} onChange={handleChange} required />
-                                        {Number(formData.depositAmount) < (Number(formData.persons) * (pricingSettings?.hourlyRate || 500)) && (
-                                            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-                                                <p className="text-xs text-yellow-700 font-bold mb-2">
-                                                    ⚠️ Warning: Deposit should be ₹{Number(formData.persons) * (pricingSettings?.hourlyRate || 500)} (₹{pricingSettings?.hourlyRate || 500}/person).
-                                                </p>
-                                                <label className="flex items-center gap-2 cursor-pointer">
-                                                    <input
-                                                        type="checkbox"
-                                                        name="forceDepositAccept"
-                                                        checked={formData.forceDepositAccept}
-                                                        onChange={(e) => setFormData(prev => ({ ...prev, forceDepositAccept: e.target.checked }))}
-                                                        className="w-4 h-4 text-black rounded focus:ring-black"
-                                                    />
-                                                    <span className="text-xs font-bold text-gray-900">Forcefully Accept Low Deposit</span>
-                                                </label>
-                                            </div>
+                                        {formData.bookingType === 'ADVANCE' ? (
+                                            <Input label="Advance Token (₹)" type="number" name="advanceTokenAmount" value={formData.advanceTokenAmount} onChange={handleChange} required />
+                                        ) : (
+                                            <Input label="Initial First Payment (₹)" type="number" name="initialRentPayment" value={formData.initialRentPayment} onChange={handleChange} required />
                                         )}
+                                        <div>
+                                            <label className="block text-xs font-bold text-text-secondary mb-1.5 uppercase tracking-wide">Payment Method <span className="text-red-500">*</span></label>
+                                            <select name="paymentMethod" value={formData.paymentMethod} onChange={handleChange} className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3.5 text-sm focus:outline-none focus:border-primary transition-colors appearance-none">
+                                                <option value="CASH">Cash</option>
+                                                <option value="UPI">UPI</option>
+                                                <option value="CARD">Card</option>
+                                                <option value="OTHER">Other</option>
+                                            </select>
+                                        </div>
                                     </div>
-                                    {formData.bookingType === 'ADVANCE' ? (
-                                        <Input label="Advance Token (₹)" type="number" name="advanceTokenAmount" value={formData.advanceTokenAmount} onChange={handleChange} required />
-                                    ) : (
-                                        <Input label="Initial First Payment (₹)" type="number" name="initialRentPayment" value={formData.initialRentPayment} onChange={handleChange} required />
-                                    )}
-                                    <div>
-                                        <label className="block text-xs font-bold text-text-secondary mb-1.5 uppercase tracking-wide">Payment Method <span className="text-red-500">*</span></label>
-                                        <select name="paymentMethod" value={formData.paymentMethod} onChange={handleChange} className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3.5 text-sm focus:outline-none focus:border-primary transition-colors appearance-none">
-                                            <option value="CASH">Cash</option>
-                                            <option value="UPI">UPI</option>
-                                            <option value="CARD">Card</option>
-                                            <option value="OTHER">Other</option>
-                                        </select>
-                                    </div>
-                                </div>
 
+                                </div>
                             </div>
 
                             {/* Footer Actions */}

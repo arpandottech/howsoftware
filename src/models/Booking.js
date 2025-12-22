@@ -93,14 +93,6 @@ const bookingSchema = new mongoose.Schema({
             type: Number,
             required: true
         },
-        depositCollected: {
-            type: Number,
-            default: 0
-        },
-        depositReturned: {
-            type: Number,
-            default: 0
-        },
         advanceTokenAmount: {
             type: Number,
             default: 0

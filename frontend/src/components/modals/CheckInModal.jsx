@@ -3,7 +3,6 @@ import api from '../../api/axios';
 
 const CheckInModal = ({ booking, isOpen, onClose, onSuccess }) => {
     const [loading, setLoading] = useState(false);
-    const [securityDeposit, setSecurityDeposit] = useState('');
     const [paymentMethod, setPaymentMethod] = useState('CASH');
     const [error, setError] = useState('');
 
@@ -16,24 +15,17 @@ const CheckInModal = ({ booking, isOpen, onClose, onSuccess }) => {
     // This is the balance the customer needs to pay NOW upon arrival.
     const pendingRent = booking.finance.rentDue;
 
-    // Total to collect = Pending Rent + Security Deposit
-    const totalToCollect = Number(pendingRent) + Number(securityDeposit || 0);
+    // Total to collect = Pending Rent
+    const totalToCollect = Number(pendingRent);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
         setError('');
 
-        if (Number(securityDeposit) <= 0) {
-            setError("Please enter a valid security deposit amount.");
-            setLoading(false);
-            return;
-        }
-
         try {
             const payload = {
                 collectedRent: pendingRent, // We collect all pending rent
-                securityDeposit: Number(securityDeposit),
                 paymentMethod
             };
 
@@ -84,19 +76,6 @@ const CheckInModal = ({ booking, isOpen, onClose, onSuccess }) => {
                     </div>
 
                     <div className="space-y-4">
-                        <div>
-                            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5">
-                                Security Deposit <span className="text-red-500">*</span>
-                            </label>
-                            <input
-                                type="number"
-                                value={securityDeposit}
-                                onChange={(e) => setSecurityDeposit(e.target.value)}
-                                className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm font-medium focus:outline-none focus:border-black transition-colors"
-                                placeholder="Enter amount"
-                                required
-                            />
-                        </div>
 
                         <div>
                             <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5">

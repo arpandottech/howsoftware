@@ -33,7 +33,7 @@ const BookingDetailsModal = ({ booking, isOpen, onClose, onSuccess }) => {
     const pricing = booking?.pricingSnapshot || {};
     const totalCurrentGross = (finance.grossAmount || 0) + Number(manualOvertimeAmount || 0);
     const totalCurrentLiability = totalCurrentGross - Number(discountAmount || 0);
-    const totalCurrentPaid = (finance.rentPaid || 0) + (finance.depositCollected || 0);
+    const totalCurrentPaid = (finance.rentPaid || 0);
     const currentNetPayable = totalCurrentLiability - totalCurrentPaid;
 
     useEffect(() => {
@@ -172,38 +172,18 @@ const BookingDetailsModal = ({ booking, isOpen, onClose, onSuccess }) => {
 
         try {
             let extraRentPayment = 0;
-            let depositReturnAmount = 0;
 
             if (netPayable > 0) {
                 extraRentPayment = netPayable;
             } else {
-                // Refund scenario.
-                // We need to record that we "used" the deposit/rent toward the liability?
-                // Actually, if we refund, it means they paid too much.
-                // We return 'netPayable'.
-                // Backend handles 'extraRentPayment' as ADDING to rent.
-                // If we have negative netPayable, we don't send negative rent payment.
-                // We send depositReturnAmount or just record refund.
-
-                // However, the backend logic for 'endSession' is:
-                // 4. Rent Payment at Exit: adds extraRentPayment to rentPaid.
-                // 5. Deposit Return: adds depositReturnAmount to depositReturned.
-
-                // If we have a refund, we probably want to return deposit first.
-                depositReturnAmount = Math.abs(netPayable);
-
-                // What if refund is MORE than deposit? (e.g. huge discount)
-                // Then we are refunding Rent Paid too?
-                // Backend only supports 'depositReturnAmount' which logs type 'DEPOSIT_OUT'.
-                // We might need to support 'RENT_REFUND' if deposit isn't enough?
-                // For now, assuming refund comes out of deposit or is just recorded as returned.
-                // Let's just pass depositReturnAmount as the full refund value.
+                // Refund scenario. (Refund Rent?)
+                // Since deposit is removed, any negative amount means rent was overpaid (unlikely but possible with discounts).
+                // We'll treat netPayable as the refund amount.
             }
 
             const payload = {
                 exitTime: exitTime ? new Date(exitTime).toISOString() : new Date().toISOString(),
                 extraRentPayment: payAmount ? Number(payAmount) : 0,
-                depositReturnAmount: depositReturnAmount,
                 discountAmount: discountAmount ? Number(discountAmount) : 0,
                 discountReference,
                 paymentMethod,
@@ -318,7 +298,6 @@ const BookingDetailsModal = ({ booking, isOpen, onClose, onSuccess }) => {
                             <div className="border border-gray-100 rounded-2xl overflow-hidden">
                                 <div className="bg-gray-50/50 px-6 py-3 border-b border-gray-100 flex justify-between items-center">
                                     <h3 className="text-sm font-bold text-gray-900">Financial Summary</h3>
-                                    {finance.depositCollected > 0 && <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded">Security Deposit Held: {formatCurrency(finance.depositCollected)}</span>}
                                 </div>
                                 <div className="p-6 space-y-3 text-sm">
                                     <div className="flex justify-between">
@@ -427,10 +406,6 @@ const BookingDetailsModal = ({ booking, isOpen, onClose, onSuccess }) => {
                                     <div className="flex justify-between items-center text-sm text-blue-300">
                                         <span>Less: Paid Rent</span>
                                         <span>- {formatCurrency(finance.rentPaid || 0)}</span>
-                                    </div>
-                                    <div className="flex justify-between items-center text-sm text-blue-300">
-                                        <span>Less: Security Deposit</span>
-                                        <span>- {formatCurrency(finance.depositCollected || 0)}</span>
                                     </div>
                                 </div>
 

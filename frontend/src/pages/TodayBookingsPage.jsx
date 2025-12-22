@@ -12,7 +12,7 @@ const TodayBookingsPage = () => {
     // Modal Form State
     const [endSessionForm, setEndSessionForm] = useState({
         extraRentPayment: 0,
-        depositReturnAmount: 0,
+        extraRentPayment: 0,
         paymentMethod: 'CASH'
     });
 
@@ -48,7 +48,7 @@ const TodayBookingsPage = () => {
 
         setEndSessionForm({
             extraRentPayment: initialRent,
-            depositReturnAmount: 0, // Default to 0, user decides how much to return
+            extraRentPayment: initialRent,
             paymentMethod: 'CASH'
         });
         setShowModal(true);
@@ -59,7 +59,7 @@ const TodayBookingsPage = () => {
         try {
             const res = await api.post(`/bookings/${selectedBooking._id}/end-session`, {
                 extraRentPayment: Number(endSessionForm.extraRentPayment),
-                depositReturnAmount: Number(endSessionForm.depositReturnAmount),
+                extraRentPayment: Number(endSessionForm.extraRentPayment),
                 paymentMethod: endSessionForm.paymentMethod
             });
 
@@ -173,16 +173,6 @@ const TodayBookingsPage = () => {
                                 <p className="text-xs text-gray-500 mt-1">Current Due: ₹{selectedBooking.finance.rentDue}</p>
                             </div>
 
-                            <div>
-                                <label className="block text-gray-700 text-sm font-medium mb-1">Deposit Return Amount (₹)</label>
-                                <input
-                                    type="number"
-                                    className="w-full p-2 border rounded"
-                                    value={endSessionForm.depositReturnAmount}
-                                    onChange={e => setEndSessionForm({ ...endSessionForm, depositReturnAmount: e.target.value })}
-                                />
-                                <p className="text-xs text-gray-500 mt-1">Collected Deposit: ₹{selectedBooking.finance.depositCollected}</p>
-                            </div>
 
                             <div>
                                 <label className="block text-gray-700 text-sm font-medium mb-1">Payment Method</label>
