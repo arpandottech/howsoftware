@@ -8,12 +8,12 @@ const SwipeButton = ({ onComplete, mainText = "Slide to Pay", amount, disabled =
     const sliderRef = useRef(null);
     const startXRef = useRef(0);
 
-    // Reset state when resetKey changes or if explicitly requested
+    // Reset state when resetKey changes
     useEffect(() => {
-        if (!completed) {
-            setDragWidth(0);
-        }
-    }, [resetKey, completed]);
+        setDragWidth(0);
+        setCompleted(false);
+        setIsDragging(false);
+    }, [resetKey]);
 
     const handleStart = (clientX) => {
         if (completed || disabled) return;

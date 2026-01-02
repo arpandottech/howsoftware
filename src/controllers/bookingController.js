@@ -412,7 +412,8 @@ exports.updateBooking = async (req, res, next) => {
             customHours,
             persons,
             startTime,
-            notes
+            notes,
+            grossAmount // New Field which corresponds to "Amount" in UI
         } = req.body;
 
         let booking = await Booking.findById(req.params.id);
@@ -441,6 +442,8 @@ exports.updateBooking = async (req, res, next) => {
         if (sessionType === 'CUSTOM' || booking.sessionType === 'CUSTOM') {
             if (Number(customHours) !== booking.customHours) recalcNeeded = true;
         }
+        // Force recalc/update if a specific amount is provided manually
+        if (grossAmount !== undefined && Number(grossAmount) !== booking.finance.grossAmount) recalcNeeded = true;
 
         if (recalcNeeded) {
             // Apply new values for calculation
@@ -469,9 +472,15 @@ exports.updateBooking = async (req, res, next) => {
             const end = new Date(newStartTime.getTime() + hours * 60 * 60 * 1000);
 
             // 3. Compute Rent (Gross)
-            // Use SNAPSHOT rate to preserve original price agreement
-            const rate = booking.pricingSnapshot?.ratePerPersonPerHour || 500;
-            const newGross = rate * newPersons * hours;
+            // If explicit grossAmount provided, use it. Otherwise calculate.
+            let newGross;
+            if (grossAmount !== undefined) {
+                newGross = Number(grossAmount);
+            } else {
+                // Use SNAPSHOT rate to preserve original price agreement
+                const rate = booking.pricingSnapshot?.ratePerPersonPerHour || 500;
+                newGross = rate * newPersons * hours;
+            }
 
             // 4. Update Financials
             booking.finance.grossAmount = newGross;

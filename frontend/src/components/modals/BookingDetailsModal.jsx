@@ -7,6 +7,8 @@ const BookingDetailsModal = ({ booking, isOpen, onClose, onSuccess }) => {
     const [viewMode, setViewMode] = useState('DETAILS'); // 'DETAILS' or 'CHECKOUT'
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const scrollContainerRef = React.useRef(null);
+    const [checkoutAttempt, setCheckoutAttempt] = useState(0);
 
     const getLocalISOString = () => {
         const now = new Date();
@@ -75,7 +77,10 @@ const BookingDetailsModal = ({ booking, isOpen, onClose, onSuccess }) => {
                 startDate: new Date(booking.startTime).toISOString().slice(0, 10),
                 // Format time for input type="time" (HH:mm)
                 startTime: new Date(booking.startTime).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }),
-                notes: booking.notes || ''
+                // Format time for input type="time" (HH:mm)
+                startTime: new Date(booking.startTime).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }),
+                notes: booking.notes || '',
+                grossAmount: booking.finance.grossAmount || 0
             });
         }
     }, [viewMode, exitTime, booking]);
@@ -96,7 +101,8 @@ const BookingDetailsModal = ({ booking, isOpen, onClose, onSuccess }) => {
                 ...editFormData,
                 startTime: combinedStart.toISOString(),
                 persons: Number(editFormData.persons),
-                customHours: Number(editFormData.customHours)
+                customHours: Number(editFormData.customHours),
+                grossAmount: Number(editFormData.grossAmount) // Send manual amount
             };
 
             const res = await api.put(`/bookings/${booking._id}`, payload);
@@ -165,6 +171,8 @@ const BookingDetailsModal = ({ booking, isOpen, onClose, onSuccess }) => {
         if (netPayable > 0) {
             if (Number(payAmount) < netPayable) {
                 setError(`Full payment of balance ₹${netPayable} is required.`);
+                setCheckoutAttempt(prev => prev + 1);
+                if (scrollContainerRef.current) scrollContainerRef.current.scrollTop = 0;
                 setLoading(false);
                 return;
             }
@@ -204,6 +212,8 @@ const BookingDetailsModal = ({ booking, isOpen, onClose, onSuccess }) => {
         } catch (err) {
             console.error(err);
             setError(err.response?.data?.error || 'Failed to checkout');
+            setCheckoutAttempt(prev => prev + 1);
+            if (scrollContainerRef.current) scrollContainerRef.current.scrollTop = 0;
         } finally {
             setLoading(false);
         }
@@ -230,7 +240,7 @@ const BookingDetailsModal = ({ booking, isOpen, onClose, onSuccess }) => {
                     </button>
                 </div>
 
-                <div className="overflow-y-auto custom-scrollbar p-0">
+                <div ref={scrollContainerRef} className="overflow-y-auto custom-scrollbar p-0">
                     {/* Error Banner */}
                     {error && (
                         <div className="mx-8 mt-6 bg-red-50 border border-red-100 text-red-600 p-4 rounded-xl flex items-start gap-3">
@@ -529,7 +539,7 @@ const BookingDetailsModal = ({ booking, isOpen, onClose, onSuccess }) => {
                                     mainText="Slide to Complete"
                                     amount={currentNetPayable > 0 ? formatCurrency(currentNetPayable) : 'Refund'}
                                     disabled={loading}
-                                    resetKey={viewMode} // Reset when mode toggles
+                                    resetKey={`${viewMode}-${checkoutAttempt}`} // Reset when mode toggles or checkout fails
                                 />
                             </div >
                         </form>
@@ -596,9 +606,13 @@ const BookingDetailsModal = ({ booking, isOpen, onClose, onSuccess }) => {
                                             <input type="date" name="startDate" value={editFormData.startDate || ''} onChange={handleEditChange} className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm font-bold focus:outline-none focus:border-black" required />
                                         </div>
                                         <div>
-                                            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5">Time</label>
-                                            <input type="time" name="startTime" value={editFormData.startTime || ''} onChange={handleEditChange} className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm font-bold focus:outline-none focus:border-black" required />
+                                            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5">Amount (₹)</label>
+                                            <input type="number" name="grossAmount" value={editFormData.grossAmount || ''} onChange={handleEditChange} className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm font-bold focus:outline-none focus:border-black" />
                                         </div>
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5">Time</label>
+                                        <input type="time" name="startTime" value={editFormData.startTime || ''} onChange={handleEditChange} className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm font-bold focus:outline-none focus:border-black" required />
                                     </div>
                                 </div>
                             </div>
@@ -643,7 +657,7 @@ const BookingDetailsModal = ({ booking, isOpen, onClose, onSuccess }) => {
                     </div>
                 )}
             </div>
-        </div>
+        </div >
     );
 };
 
