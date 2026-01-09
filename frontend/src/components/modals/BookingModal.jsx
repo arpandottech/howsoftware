@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
-import api from '../../api/axios'; // Adjust path if necessary, assuming ../../api/axios exists
+import api from '../../api/axios';
+import StudioAutocomplete from '../ui/StudioAutocomplete';
 
 const BookingModal = ({ isOpen, onClose }) => {
     const [loading, setLoading] = useState(false);
@@ -18,7 +19,7 @@ const BookingModal = ({ isOpen, onClose }) => {
     const [formData, setFormData] = useState({
         bookingType: 'WALK_IN',
         customerName: '',
-        coupleName: '',
+
         photographyName: '',
         phone: '',
         persons: 1,
@@ -27,13 +28,10 @@ const BookingModal = ({ isOpen, onClose }) => {
         startDate: new Date().toISOString().split('T')[0],
         startTime: getCurrentTime(),
 
-        depositAmount: 0,
         initialRentPayment: 0,
         paymentMethod: 'CASH'
     });
 
-    // Guard Clause: Don't render if not open
-    if (!isOpen) return null;
 
     React.useEffect(() => {
         if (isOpen) {
@@ -61,9 +59,9 @@ const BookingModal = ({ isOpen, onClose }) => {
 
         // Strict Validation: Check all fields
         const requiredFields = [
-            'bookingType', 'customerName', 'phone', 'coupleName', 'photographyName',
+            'bookingType', 'customerName', 'phone', 'photographyName',
             'persons', 'sessionType', 'startDate', 'startTime',
-            'depositAmount', 'initialRentPayment', 'paymentMethod'
+            'initialRentPayment', 'paymentMethod'
         ];
 
         const missingField = requiredFields.find(field => {
@@ -93,7 +91,6 @@ const BookingModal = ({ isOpen, onClose }) => {
                 persons: Number(formData.persons),
                 customHours: Number(formData.customHours),
 
-                depositAmount: Number(formData.depositAmount),
                 initialRentPayment: Number(formData.initialRentPayment)
             };
 
@@ -102,9 +99,9 @@ const BookingModal = ({ isOpen, onClose }) => {
             if (res.data.success) {
                 setSuccessMsg(`Booking Created! Code: ${res.data.data.bookingCode}`);
                 setFormData({
-                    bookingType: 'WALK_IN', customerName: '', coupleName: '', photographyName: '', phone: '',
+                    bookingType: 'WALK_IN', customerName: '', photographyName: '', phone: '',
                     persons: 1, sessionType: 'ONE_HOUR', customHours: 0, startDate: new Date().toISOString().split('T')[0],
-                    startTime: getCurrentTime(), depositAmount: 0,
+                    startTime: getCurrentTime(),
                     initialRentPayment: 0, paymentMethod: 'CASH'
                 });
                 setTimeout(() => {
@@ -180,11 +177,14 @@ const BookingModal = ({ isOpen, onClose }) => {
                             {/* Left Col: Customer Info */}
                             <div className="space-y-5">
                                 <h3 className="text-lg font-bold text-text-main border-b border-gray-100 pb-2">Customer Details</h3>
-                                <Input label="Customer Name" name="customerName" value={formData.customerName} onChange={handleChange} required />
+                                <Input label="Couple Name" name="customerName" value={formData.customerName} onChange={handleChange} required />
                                 <Input label="Phone Number" name="phone" value={formData.phone} onChange={handleChange} required />
-                                <div className="grid grid-cols-2 gap-4">
-                                    <Input label="Couple Name" name="coupleName" value={formData.coupleName} onChange={handleChange} required />
-                                    <Input label="Photography Studio" name="photographyName" value={formData.photographyName} onChange={handleChange} required />
+                                <div className="grid grid-cols-1 gap-4">
+                                    <StudioAutocomplete
+                                        value={formData.photographyName}
+                                        onChange={handleChange}
+                                        required
+                                    />
                                 </div>
                             </div>
 
@@ -209,7 +209,7 @@ const BookingModal = ({ isOpen, onClose }) => {
                                 {formData.sessionType === 'CUSTOM' && (
                                     <Input label="Custom Hours" type="number" name="customHours" value={formData.customHours} onChange={handleChange} required />
                                 )}
-                                <div className="grid grid-cols-2 gap-4">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div>
                                         <label className="block text-xs font-bold text-text-secondary mb-1.5 uppercase tracking-wide">Date <span className="text-red-500">*</span></label>
                                         <DatePicker
@@ -218,6 +218,7 @@ const BookingModal = ({ isOpen, onClose }) => {
                                             dateFormat="dd MMM yyyy"
                                             customInput={<CustomFormDateInput placeholder="Select Date" />}
                                             wrapperClassName="w-full"
+                                            popperPlacement="bottom-start"
                                         />
                                     </div>
                                     <div>
@@ -266,8 +267,7 @@ const BookingModal = ({ isOpen, onClose }) => {
                         <div className="pt-4">
                             <h3 className="text-lg font-bold text-text-main border-b border-gray-100 pb-2 mb-5">Payment & Finance</h3>
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                <Input label="Deposit Amount (₹)" type="number" name="depositAmount" value={formData.depositAmount} onChange={handleChange} required />
-                                <Input label="Initial Rent (₹)" type="number" name="initialRentPayment" value={formData.initialRentPayment} onChange={handleChange} required />
+                                <Input label="Payment (₹)" type="number" name="initialRentPayment" value={formData.initialRentPayment} onChange={handleChange} required />
                                 <div>
                                     <label className="block text-xs font-bold text-text-secondary mb-1.5 uppercase tracking-wide">Payment Method <span className="text-red-500">*</span></label>
                                     <select name="paymentMethod" value={formData.paymentMethod} onChange={handleChange} className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3.5 text-sm focus:outline-none focus:border-primary transition-colors appearance-none">

@@ -8,12 +8,12 @@ const paymentSchema = new mongoose.Schema({
     },
     type: {
         type: String,
-        enum: ['RENT', 'DEPOSIT_IN', 'DEPOSIT_OUT', 'REFUND'],
+        enum: ['RENT', 'REFUND'],
         required: true
     },
     method: {
         type: String,
-        enum: ['CASH', 'UPI', 'CARD', 'OTHER', 'DEPOSIT_DEDUCTION'],
+        enum: ['CASH', 'UPI', 'CARD', 'OTHER'],
         required: true
     },
     amount: {

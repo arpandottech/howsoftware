@@ -1,0 +1,34 @@
+
+Total Bookings: 36
+With Studio Name: 35
+Bookings Today (Server Time): 4
+Bookings Today with Studio: 4
+Query Start: Fri Jan 09 2026 00:00:00 GMT+0530 (India Standard Time)
+Query End: Fri Jan 09 2026 23:59:59 GMT+0530 (India Standard Time)
+Today Bookings List: [
+  {
+    "_id": "69608dabfb22fef3762e2f1e",
+    "customerName": "dfhhb",
+    "photographyName": "fdgdfgrfg",
+    "startTime": "2026-01-09T05:09:00.000Z"
+  },
+  {
+    "_id": "696096b6fb22fef3762e2f53",
+    "customerName": "Test Couple V1",
+    "photographyName": "Unique Studio Alpha",
+    "startTime": "2026-01-09T05:46:00.000Z"
+  },
+  {
+    "_id": "69609fb657ef31bac05759bb",
+    "customerName": "hello hii",
+    "photographyName": "Kanyadan Studio",
+    "startTime": "2026-01-09T06:24:00.000Z"
+  },
+  {
+    "_id": "6960a44d57ef31bac05759f7",
+    "customerName": "hello hii",
+    "photographyName": "Kanyadan Studio",
+    "startTime": "2026-01-09T06:46:00.000Z"
+  }
+]
+        

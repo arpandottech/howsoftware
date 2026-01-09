@@ -10,9 +10,7 @@ const bookingSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    coupleName: {
-        type: String
-    },
+
     photographyName: {
         type: String
     },

@@ -6,6 +6,7 @@ import api from '../api/axios';
 import { format, isSameDay, addDays, isSameWeek, parseISO, startOfToday } from 'date-fns';
 import CheckInModal from '../components/modals/CheckInModal';
 import BookingDetailsModal from '../components/modals/BookingDetailsModal';
+import ExportBookingModal from '../components/modals/ExportBookingModal';
 
 const BookingsPage = () => {
     const [allBookings, setAllBookings] = useState([]);
@@ -15,13 +16,12 @@ const BookingsPage = () => {
     const [itemsPerPage, setItemsPerPage] = useState(20);
     const [checkInBooking, setCheckInBooking] = useState(null); // For checkin modal
     const [detailsBooking, setDetailsBooking] = useState(null); // For details/checkout modal
+    const [isExportOpen, setIsExportOpen] = useState(false);
 
     const fetchBookings = async () => {
         try {
             const res = await api.get('/bookings');
             if (res.data.success) {
-                // Sort by Date descending (newest first) by default, or ascending for upcoming?
-                // User probably wants to see relevant filtered items. Let's do Ascending by default for better calendar feel.
                 const sorted = res.data.data.sort((a, b) => new Date(b.startTime) - new Date(a.startTime));
                 setAllBookings(sorted);
                 setFilteredBookings(sorted);
@@ -37,24 +37,17 @@ const BookingsPage = () => {
         fetchBookings();
     }, []);
 
-    // Sync state with URL params on mount/update
     useEffect(() => {
         const filterParam = searchParams.get('filter');
-        const statusParam = searchParams.get('status');
-
         if (filterParam) {
             setFilterType(filterParam);
         }
-        // If status param exists (e.g. IN_SESSION), we might want to store it in a state or apply it directly
-        // We'll handle it in the filtering effect below
     }, [searchParams]);
 
-    // Apply Filter when filterType, searchParams, or allBookings changes
     useEffect(() => {
         const today = startOfToday();
         let result = allBookings;
 
-        // 1. Date Filter
         switch (filterType) {
             case 'TODAY':
                 result = allBookings.filter(b => isSameDay(parseISO(b.startTime), today));
@@ -71,17 +64,15 @@ const BookingsPage = () => {
                 break;
         }
 
-        // 2. Status Filter (from URL mainly, for "Checkout" / "In Session" boxes)
         const statusParam = searchParams.get('status');
         if (statusParam) {
             result = result.filter(b => b.status === statusParam);
         }
 
         setFilteredBookings(result);
-        setCurrentPage(1); // Reset to first page on filter change
+        setCurrentPage(1);
     }, [filterType, allBookings, searchParams]);
 
-    // Pagination
     const indexOfLastItem = currentPage * itemsPerPage;
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
     const currentItems = filteredBookings.slice(indexOfFirstItem, indexOfLastItem);
@@ -103,7 +94,14 @@ const BookingsPage = () => {
                     </div>
 
                     <div className="flex flex-col sm:flex-row gap-4 items-center w-full sm:w-auto">
-                        {/* Items Per Page Selector */}
+                        <button
+                            onClick={() => setIsExportOpen(true)}
+                            className="bg-white border border-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm font-bold hover:bg-gray-50 hover:border-gray-300 transition-all flex items-center gap-2 shadow-sm"
+                        >
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                            Export PDF
+                        </button>
+
                         <div className="flex items-center gap-2 self-start sm:self-center">
                             <span className="text-sm text-text-secondary font-medium">Show</span>
                             <select
@@ -121,7 +119,6 @@ const BookingsPage = () => {
                             </select>
                         </div>
 
-                        {/* Filter Buttons - Swipable with Highlight */}
                         <div className="relative w-full sm:w-auto group">
                             <div className="flex bg-gray-100 p-1 rounded-xl overflow-x-auto hide-scrollbar sm:overflow-visible w-full sm:w-auto snap-x relative z-0">
                                 {[
@@ -142,13 +139,11 @@ const BookingsPage = () => {
                                     </button>
                                 ))}
                             </div>
-                            {/* Mobile Scroll Hint Gradient (Right Side) */}
                             <div className="absolute top-0 right-0 bottom-0 w-8 bg-gradient-to-l from-white/80 to-transparent pointer-events-none sm:hidden rounded-r-xl z-10" />
                         </div>
                     </div>
                 </div>
 
-                {/* Bookings Table with Mobile Scroll Hint */}
                 <div className="relative group">
                     <div className="overflow-x-auto rounded-xl border border-gray-100 hide-scrollbar pb-2">
                         <table className="w-full min-w-[1000px] text-left border-collapse">
@@ -235,11 +230,9 @@ const BookingsPage = () => {
                             </tbody>
                         </table>
                     </div>
-                    {/* Mobile Scroll Hint Gradient (Right Side) */}
                     <div className="absolute top-0 right-0 bottom-0 w-8 bg-gradient-to-l from-white/90 to-transparent pointer-events-none lg:hidden rounded-r-xl z-10" />
                 </div>
 
-                {/* Pagination Controls */}
                 {totalPages > 1 && (
                     <div className="flex justify-center mt-8 gap-2">
                         <button
@@ -288,6 +281,11 @@ const BookingsPage = () => {
                 onSuccess={() => {
                     fetchBookings();
                 }}
+            />
+
+            <ExportBookingModal
+                isOpen={isExportOpen}
+                onClose={() => setIsExportOpen(false)}
             />
         </LayoutShell>
     );

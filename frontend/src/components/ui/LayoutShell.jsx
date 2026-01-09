@@ -116,7 +116,10 @@ const LayoutShell = ({ children, title }) => {
                     {hasPermission('MODULE_BOOKINGS') && <NavItem to="/bookings/new" icon={<CalendarPlusIcon className="w-5 h-5" />} label="Add Booking" />}
                     {hasPermission('MODULE_BOOKINGS') && <NavItem to="/bookings" icon={<BookIcon className="w-5 h-5" />} label="Bookings" />}
                     {hasPermission('MODULE_EXPENSES') && <NavItem to="/expenses" icon={<DollarIcon className="w-5 h-5" />} label="Expenses" />}
+
                     {hasPermission('MODULE_FINANCE') && <NavItem to="/finance" icon={<HistoryIcon className="w-5 h-5" />} label="Finance" />}
+
+                    <NavItem to="/reports/studios" icon={<ChartIcon className="w-5 h-5" />} label="Studio Reports" />
 
                     <NavItem to="/profile" icon={<UserIcon className="w-5 h-5" />} label="Profile" />
 

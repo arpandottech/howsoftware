@@ -180,18 +180,7 @@ const FinancePage = () => {
                         </div>
                     </div>
 
-                    {/* Deposits Held */}
-                    <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm relative overflow-hidden group hover:shadow-md transition-all">
-                        <div className="absolute top-0 right-0 w-24 h-24 bg-blue-50 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
-                        <div className="relative">
-                            <p className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-2">Deposits Held</p>
-                            <h3 className="text-3xl font-black text-gray-900">{stats.netDepositFlow > 0 ? '+' : ''}₹{stats.netDepositFlow.toLocaleString('en-IN')}</h3>
-                            <div className="mt-4 flex flex-col gap-1 text-[10px] font-bold text-gray-500">
-                                <div className="flex justify-between"><span>Collected:</span> <span>₹{stats.depositsCollected}</span></div>
-                                <div className="flex justify-between"><span>Returned:</span> <span>₹{stats.depositsReturned}</span></div>
-                            </div>
-                        </div>
-                    </div>
+
                 </div>
 
                 {/* Recent Transactions */}

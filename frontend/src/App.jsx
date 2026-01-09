@@ -11,6 +11,7 @@ import ExpensePage from './pages/ExpensePage';
 import FinancePage from './pages/FinancePage';
 import ProfilePage from './pages/ProfilePage';
 import SettingsPage from './pages/SettingsPage';
+import StudioReportsPage from './pages/StudioReportsPage';
 import ProtectedLayout from './components/layout/ProtectedLayout';
 
 import { useEffect } from 'react'; // Ensure React import is updated if needed, though usually automatic in new Vite. 
@@ -103,6 +104,7 @@ function App() {
           <Route path="/finance" element={<FinancePage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/settings" element={<SettingsPage />} />
+          <Route path="/reports/studios" element={<StudioReportsPage />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/dashboard" replace />} />

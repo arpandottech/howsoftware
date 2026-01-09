@@ -5,6 +5,7 @@ import "react-datepicker/dist/react-datepicker.css";
 
 import api from '../api/axios';
 import LayoutShell from '../components/ui/LayoutShell';
+import StudioAutocomplete from '../components/ui/StudioAutocomplete';
 
 const NewBookingPage = () => {
     const navigate = useNavigate();
@@ -37,7 +38,7 @@ const NewBookingPage = () => {
     const [formData, setFormData] = useState({
         bookingType: 'WALK_IN',
         customerName: '',
-        coupleName: '',
+
         photographyName: '',
         phone: '',
         persons: 1,
@@ -72,7 +73,7 @@ const NewBookingPage = () => {
 
         // Strict Validation: Check all fields
         const requiredFields = [
-            'bookingType', 'customerName', 'phone', 'coupleName', 'photographyName',
+            'bookingType', 'customerName', 'phone', 'photographyName',
             'persons', 'sessionType', 'startDate', 'startTime',
             'initialRentPayment', 'paymentMethod'
         ];
@@ -102,7 +103,7 @@ const NewBookingPage = () => {
             if (res.data.success) {
                 setSuccessMsg(`Booking Created! Code: ${res.data.data.bookingCode}`);
                 setFormData({
-                    bookingType: 'WALK_IN', customerName: '', coupleName: '', photographyName: '', phone: '',
+                    bookingType: 'WALK_IN', customerName: '', photographyName: '', phone: '',
                     persons: 1, sessionType: 'ONE_HOUR', customHours: 0, startDate: new Date().toISOString().split('T')[0],
                     initialRentPayment: 0, advanceTokenAmount: 0, paymentMethod: 'CASH'
                 });
@@ -175,11 +176,14 @@ const NewBookingPage = () => {
                                 {/* Left Col: Customer Info */}
                                 <div className="space-y-5">
                                     <h3 className="text-lg font-bold text-text-main border-b border-gray-100 pb-2">Customer Details</h3>
-                                    <Input label="Customer Name" name="customerName" value={formData.customerName} onChange={handleChange} required />
+                                    <Input label="Couple Name" name="customerName" value={formData.customerName} onChange={handleChange} required />
                                     <Input label="Phone Number" name="phone" value={formData.phone} onChange={handleChange} required />
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                        <Input label="Couple Name" name="coupleName" value={formData.coupleName} onChange={handleChange} required />
-                                        <Input label="Photography Studio" name="photographyName" value={formData.photographyName} onChange={handleChange} required />
+                                    <div className="grid grid-cols-1 gap-4">
+                                        <StudioAutocomplete
+                                            value={formData.photographyName}
+                                            onChange={handleChange}
+                                            required
+                                        />
                                     </div>
                                 </div>
 
@@ -204,7 +208,7 @@ const NewBookingPage = () => {
                                     {formData.sessionType === 'CUSTOM' && (
                                         <Input label="Custom Hours" type="number" name="customHours" value={formData.customHours} onChange={handleChange} required />
                                     )}
-                                    <div className="grid grid-cols-2 gap-4">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         <div>
                                             <label className="block text-xs font-bold text-text-secondary mb-1.5 uppercase tracking-wide">Date <span className="text-red-500">*</span></label>
                                             <DatePicker
@@ -213,6 +217,7 @@ const NewBookingPage = () => {
                                                 dateFormat="dd MMM yyyy"
                                                 customInput={<CustomFormDateInput placeholder="Select Date" />}
                                                 wrapperClassName="w-full"
+                                                popperPlacement="bottom-start"
                                             />
                                         </div>
                                         <div>
@@ -265,7 +270,7 @@ const NewBookingPage = () => {
                                         {formData.bookingType === 'ADVANCE' ? (
                                             <Input label="Advance Token (₹)" type="number" name="advanceTokenAmount" value={formData.advanceTokenAmount} onChange={handleChange} required />
                                         ) : (
-                                            <Input label="Initial First Payment (₹)" type="number" name="initialRentPayment" value={formData.initialRentPayment} onChange={handleChange} required />
+                                            <Input label="Payment (₹)" type="number" name="initialRentPayment" value={formData.initialRentPayment} onChange={handleChange} required />
                                         )}
                                         <div>
                                             <label className="block text-xs font-bold text-text-secondary mb-1.5 uppercase tracking-wide">Payment Method <span className="text-red-500">*</span></label>

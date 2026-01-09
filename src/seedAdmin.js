@@ -5,9 +5,11 @@ const Role = require('./models/Role'); // Import Role
 const connectDB = require('./config/db');
 
 dotenv.config();
-connectDB();
+
+
 
 const seedAdmin = async () => {
+    await connectDB();
     try {
         // 1. Ensure Admin Role Exists
         let adminRole = await Role.findOne({ name: 'Admin' });

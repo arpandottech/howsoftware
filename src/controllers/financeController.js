@@ -53,18 +53,15 @@ exports.getFinanceStats = async (req, res, next) => {
         // 3. Aggregate Data
         let totalIncome = 0;
         let totalExpense = 0;
-        let depositsCollected = 0;
-        let depositsReturned = 0;
 
         // Process Payments
         const incomeTransactions = [];
-        const depositTransactions = [];
 
         payments.forEach(p => {
             const amount = p.amount;
 
-            // Income Logic: RENT or DEPOSIT_DEDUCTION
-            if (p.type === 'RENT' || p.method === 'DEPOSIT_DEDUCTION') {
+            // Income Logic: RENT
+            if (p.type === 'RENT') {
                 totalIncome += amount;
                 incomeTransactions.push({
                     id: p._id,
@@ -73,29 +70,6 @@ exports.getFinanceStats = async (req, res, next) => {
                     category: 'Income',
                     type: 'INCOME', // For UI Color
                     amount: amount
-                });
-            }
-
-            // Deposit Logic
-            if (p.type === 'DEPOSIT_IN') {
-                depositsCollected += amount;
-                depositTransactions.push({
-                    id: p._id,
-                    date: p.paidAt,
-                    description: p.bookingId ? `Deposit - ${p.bookingId.customerName}` : 'Deposit In',
-                    category: 'Deposit',
-                    type: 'DEPOSIT_IN',
-                    amount: amount
-                });
-            } else if (p.type === 'DEPOSIT_OUT') {
-                depositsReturned += amount;
-                depositTransactions.push({
-                    id: p._id,
-                    date: p.paidAt,
-                    description: p.bookingId ? `Refund - ${p.bookingId.customerName}` : 'Deposit Refund',
-                    category: 'Refund',
-                    type: 'DEPOSIT_OUT',
-                    amount: -amount // Negative for flow
                 });
             }
         });
@@ -116,14 +90,8 @@ exports.getFinanceStats = async (req, res, next) => {
         // netProfit
         const netProfit = totalIncome - totalExpense;
 
-        // Held Deposit (Net flow in this period)
-        const netDepositFlow = depositsCollected - depositsReturned;
-
         // 4. Merge & Sort Transactions
-        // We only show Income and Expense in main list? Or everything?
-        // User wants "Finance Module", so everything dealing with money is good.
-        // We can color code them.
-        const allTransactions = [...incomeTransactions, ...expenseTransactions, ...depositTransactions]
+        const allTransactions = [...incomeTransactions, ...expenseTransactions]
             .sort((a, b) => new Date(b.date) - new Date(a.date));
 
         // 5. Build Chart Data (Daily breakdown)
@@ -150,10 +118,7 @@ exports.getFinanceStats = async (req, res, next) => {
             stats: {
                 totalIncome,
                 totalExpense,
-                netProfit,
-                netDepositFlow,
-                depositsCollected,
-                depositsReturned
+                netProfit
             },
             chartData,
             recentTransactions: allTransactions

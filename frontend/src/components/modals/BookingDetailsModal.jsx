@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import api from '../../api/axios';
 import { format, parseISO, addMinutes, differenceInMinutes } from 'date-fns';
 import SwipeButton from '../ui/SwipeButton';
+import StudioAutocomplete from '../ui/StudioAutocomplete';
 
 const BookingDetailsModal = ({ booking, isOpen, onClose, onSuccess }) => {
     const [viewMode, setViewMode] = useState('DETAILS'); // 'DETAILS' or 'CHECKOUT'
@@ -67,7 +68,7 @@ const BookingDetailsModal = ({ booking, isOpen, onClose, onSuccess }) => {
         if (viewMode === 'EDIT' && booking) {
             setEditFormData({
                 customerName: booking.customerName,
-                coupleName: booking.coupleName,
+
                 photographyName: booking.photographyName,
                 phone: booking.phone,
                 persons: booking.persons,
@@ -199,7 +200,7 @@ const BookingDetailsModal = ({ booking, isOpen, onClose, onSuccess }) => {
             // Note: If netPayable > 0, we collected cash. If netPayable < 0, we refunded cash.
             // If paying, use selected method.
             if (netPayable > 0) payload.paymentMethod = paymentMethod;
-            else payload.paymentMethod = 'DEPOSIT_DEDUCTION'; // Or 'CASH' for refund out.
+            else payload.paymentMethod = 'CASH'; // Default to CASH for refund out.
 
             const res = await api.post(`/bookings/${booking._id}/end-session`, payload);
 
@@ -252,7 +253,7 @@ const BookingDetailsModal = ({ booking, isOpen, onClose, onSuccess }) => {
                             {/* Key Info Grid */}
                             <div className="grid grid-cols-2 gap-6">
                                 <div className="space-y-1">
-                                    <h4 className="text-xs uppercase tracking-wider font-bold text-gray-400">Customer</h4>
+                                    <h4 className="text-xs uppercase tracking-wider font-bold text-gray-400">Couple Name</h4>
                                     <p className="text-lg font-bold text-gray-900">{booking.customerName}</p>
                                     <p className="text-sm text-gray-500">{booking.phone}</p>
                                 </div>
@@ -550,22 +551,22 @@ const BookingDetailsModal = ({ booking, isOpen, onClose, onSuccess }) => {
                                 <div className="space-y-4">
                                     <h3 className="text-sm font-bold text-gray-900 border-b border-gray-100 pb-2">Customer Details</h3>
                                     <div>
-                                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5">Customer Name</label>
+                                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5">Couple Name</label>
                                         <input name="customerName" value={editFormData.customerName || ''} onChange={handleEditChange} className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm font-bold focus:outline-none focus:border-black" required />
                                     </div>
                                     <div>
                                         <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5">Phone</label>
                                         <input name="phone" value={editFormData.phone || ''} onChange={handleEditChange} className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm font-bold focus:outline-none focus:border-black" required />
                                     </div>
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div>
-                                            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5">Couple Name</label>
-                                            <input name="coupleName" value={editFormData.coupleName || ''} onChange={handleEditChange} className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm font-bold focus:outline-none focus:border-black" />
-                                        </div>
-                                        <div>
-                                            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5">Studio</label>
-                                            <input name="photographyName" value={editFormData.photographyName || ''} onChange={handleEditChange} className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm font-bold focus:outline-none focus:border-black" />
-                                        </div>
+                                    <div className="grid grid-cols-1 gap-4">
+                                        {/* Autocomplete or Input? If Autocomplete, I need to pass props matching the custom component logic. */}
+                                        {/* To keep it simple and safe given no import yet, I will use standard input but labeled "Studio". */}
+                                        {/* Actually user insists on suggestion. I should add it. */}
+                                        <StudioAutocomplete
+                                            value={editFormData.photographyName || ''}
+                                            onChange={handleEditChange}
+                                            label="Studio"
+                                        />
                                     </div>
                                 </div>
 
@@ -644,7 +645,7 @@ const BookingDetailsModal = ({ booking, isOpen, onClose, onSuccess }) => {
                             </button>
                         )}
                         {/* Edit Button */}
-                        {booking.status !== 'COMPLETED' && booking.status !== 'CANCELLED' && (
+                        {booking.status !== 'CANCELLED' && (
                             <button
                                 onClick={() => setViewMode('EDIT')}
                                 className="px-4 py-3 text-gray-500 hover:text-gray-900 font-bold hover:bg-gray-100 rounded-xl transition-colors"

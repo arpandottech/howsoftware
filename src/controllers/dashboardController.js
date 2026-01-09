@@ -43,36 +43,9 @@ exports.getDashboardSummary = async (req, res, next) => {
             totalRentDue: 0
         };
 
-        // 2. Payment Stats (paidAt on that date)
-        // We need DEPOSIT_IN and DEPOSIT_OUT
-        const paymentStats = await Payment.aggregate([
-            {
-                $match: {
-                    paidAt: { $gte: startOfDay, $lte: endOfDay },
-                    type: { $in: ['DEPOSIT_IN', 'DEPOSIT_OUT'] }
-                }
-            },
-            {
-                $group: {
-                    _id: '$type',
-                    totalAmount: { $sum: '$amount' }
-                }
-            }
-        ]);
+        // 2. Payment Stats (Previously Deposit Logic Removed)
 
-        let totalDepositCollectedToday = 0;
-        let totalDepositReturnedToday = 0;
-
-        paymentStats.forEach(stat => {
-            if (stat._id === 'DEPOSIT_IN') {
-                totalDepositCollectedToday = stat.totalAmount;
-            }
-            if (stat._id === 'DEPOSIT_OUT') {
-                totalDepositReturnedToday = stat.totalAmount;
-            }
-        });
-
-        // 3. Active Sessions (status = IN_SESSION)
+        // 3. active Sessions
         // Return: bookingCode, customerName, startTime, endTime, persons
         const activeSessions = await Booking.find({ status: 'IN_SESSION' })
             .select('bookingCode customerName startTime endTime persons')
@@ -88,8 +61,6 @@ exports.getDashboardSummary = async (req, res, next) => {
                 totalNetRent: bStats.totalNetRent,
                 totalRentPaid: bStats.totalRentPaid,
                 totalRentDue: bStats.totalRentDue,
-                totalDepositCollectedToday,
-                totalDepositReturnedToday,
                 activeSessions
             }
         });

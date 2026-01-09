@@ -1,6 +1,31 @@
+const { startOfDay, endOfDay, subDays, startOfMonth, startOfYear } = require('date-fns');
 const Booking = require('../models/Booking');
 const Payment = require('../models/Payment');
 const PricingSettings = require('../models/PricingSettings');
+const Studio = require('../models/Studio');
+
+// @desc    Search Studios by name prefix
+// @route   GET /api/bookings/studios
+// @access  Protected
+exports.searchStudios = async (req, res, next) => {
+    try {
+        const { q } = req.query;
+        if (!q) {
+            return res.status(200).json({ success: true, data: [] });
+        }
+
+        const studios = await Studio.find({
+            name: { $regex: new RegExp(`^${q}`, 'i') } // Case-insensitive prefix search
+        }).limit(10);
+
+        res.status(200).json({
+            success: true,
+            data: studios
+        });
+    } catch (err) {
+        next(err);
+    }
+};
 
 // @desc    Create a new booking
 // @route   POST /api/bookings
@@ -10,7 +35,9 @@ exports.createBooking = async (req, res, next) => {
         const {
             bookingType,
             customerName,
-            coupleName,
+
+            // coupleName removed
+
             photographyName,
             phone,
             persons,
@@ -23,6 +50,19 @@ exports.createBooking = async (req, res, next) => {
             advanceTokenAmount = 0,
             paymentMethod
         } = req.body;
+
+        // Auto-Save Studio if unique
+        if (photographyName) {
+            try {
+                // Try to create. If duplicate, it will fail (which is fine).
+                await Studio.create({ name: photographyName });
+            } catch (err) {
+                // Ignore duplicate key error (code 11000)
+                if (err.code !== 11000) {
+                    console.error("Studio Ops Error:", err);
+                }
+            }
+        }
 
         // 1. Load Pricing Settings
         let settings = await PricingSettings.findOne();
@@ -56,8 +96,6 @@ exports.createBooking = async (req, res, next) => {
         const start = new Date(startTime);
         const endTime = new Date(start.getTime() + hours * 60 * 60 * 1000);
 
-        // 4. Compute Rent (Gross)
-        // Formula: grossAmount = ratePerPersonPerHour * persons * hours
         // 4. Compute Rent (Gross)
         // Formula: grossAmount = ratePerPersonPerHour * persons * hours
         // User requested dynamic pricing from DB settings
@@ -122,8 +160,10 @@ exports.createBooking = async (req, res, next) => {
         // 9. Save Booking
         const booking = await Booking.create({
             bookingCode,
-            customerName,
-            coupleName,
+            customerName, // This is effectively the Couple Name now
+
+            // coupleName removed
+
             photographyName,
             phone,
             persons,
@@ -145,7 +185,6 @@ exports.createBooking = async (req, res, next) => {
                 discountReference,
                 netAmount,
                 rentPaid,
-                rentDue,
                 rentDue,
                 advanceTokenAmount: valAdvanceToken
             },
@@ -317,16 +356,24 @@ exports.endSession = async (req, res, next) => {
 
         // 4. Rent Payment at Exit
         const payRent = Number(extraRentPayment) || 0;
-        if (payRent > 0) {
-            await Payment.create({
+        if (payRent !== 0) { // Check for both positive payment and negative refund
+            const paymentPayload = {
                 bookingId: booking._id,
                 type: 'RENT',
-                method: paymentMethod || 'CASH',
-                amount: payRent,
+                amount: Math.abs(payRent), // Store absolute amount
                 createdBy: req.user ? req.user._id : null
-            });
+            };
 
-            booking.finance.rentPaid += payRent;
+            if (payRent > 0) { // Payment to us
+                paymentPayload.method = paymentMethod || 'CASH';
+            } else { // Refund from us
+                paymentPayload.method = 'CASH'; // Default to CASH for refund out.
+                paymentPayload.type = 'REFUND'; // Mark as refund
+            }
+
+            await Payment.create(paymentPayload);
+
+            booking.finance.rentPaid += payRent; // This will correctly add for payment, subtract for refund
             booking.finance.rentDue = booking.finance.netAmount - booking.finance.rentPaid;
         }
 
@@ -386,7 +433,21 @@ exports.getTodayBookings = async (req, res, next) => {
 // @access  Protected
 exports.getAllBookings = async (req, res, next) => {
     try {
-        const bookings = await Booking.find().sort({ startTime: -1 });
+        const { startDate, endDate } = req.query;
+        let query = {};
+
+        if (startDate && endDate) {
+            // Filter by start time range
+            const start = new Date(startDate);
+            start.setHours(0, 0, 0, 0);
+
+            const end = new Date(endDate);
+            end.setHours(23, 59, 59, 999);
+
+            query.startTime = { $gte: start, $lte: end };
+        }
+
+        const bookings = await Booking.find(query).sort({ startTime: -1 });
 
         res.status(200).json({
             success: true,
@@ -405,7 +466,8 @@ exports.updateBooking = async (req, res, next) => {
     try {
         const {
             customerName,
-            coupleName,
+
+
             photographyName,
             phone,
             sessionType,
@@ -422,13 +484,14 @@ exports.updateBooking = async (req, res, next) => {
             return res.status(404).json({ success: false, error: 'Booking not found' });
         }
 
-        if (booking.status === 'COMPLETED' || booking.status === 'CANCELLED') {
-            return res.status(400).json({ success: false, error: 'Cannot edit completed or cancelled bookings.' });
+        if (booking.status === 'CANCELLED') {
+            return res.status(400).json({ success: false, error: 'Cannot edit cancelled bookings.' });
         }
 
         // Update basic fields
         if (customerName) booking.customerName = customerName;
-        if (coupleName) booking.coupleName = coupleName;
+
+
         if (photographyName) booking.photographyName = photographyName;
         if (phone) booking.phone = phone;
         if (notes) booking.notes = notes;
@@ -504,6 +567,70 @@ exports.updateBooking = async (req, res, next) => {
         res.status(200).json({
             success: true,
             data: booking
+        });
+
+    } catch (err) {
+        next(err);
+    }
+};
+
+// @desc    Get Performance Analytics for Studios
+// @route   GET /api/bookings/analytics/studios
+// @access  Protected
+exports.getStudioAnalytics = async (req, res, next) => {
+    try {
+        const { period } = req.query; // TODAY, YESTERDAY, THIS_MONTH, THIS_YEAR
+
+        // Default to TODAY
+        let start = startOfDay(new Date());
+        let end = endOfDay(new Date());
+
+        if (period === 'YESTERDAY') {
+            const yesterday = subDays(new Date(), 1);
+            start = startOfDay(yesterday);
+            end = endOfDay(yesterday);
+        } else if (period === 'THIS_MONTH') {
+            start = startOfMonth(new Date());
+            end = endOfDay(new Date());
+        } else if (period === 'THIS_YEAR') {
+            start = startOfYear(new Date());
+            end = endOfDay(new Date());
+        }
+
+        const pipeline = [
+            {
+                $match: {
+                    status: { $ne: 'CANCELLED' }, // Ensure we don't count cancelled
+                    startTime: { $gte: start, $lte: end },
+                    photographyName: { $exists: true, $ne: '' }
+                }
+            },
+            {
+                $group: {
+                    _id: "$photographyName",
+                    totalRevenue: { $sum: "$finance.netAmount" },
+                    bookingCount: { $sum: 1 }
+                }
+            },
+            {
+                $sort: { totalRevenue: -1 }
+            },
+            {
+                $project: {
+                    name: "$_id",
+                    totalRevenue: 1,
+                    bookingCount: 1,
+                    _id: 0
+                }
+            }
+        ];
+
+        const stats = await Booking.aggregate(pipeline);
+
+        res.status(200).json({
+            success: true,
+            data: stats,
+            period: { start, end }
         });
 
     } catch (err) {
