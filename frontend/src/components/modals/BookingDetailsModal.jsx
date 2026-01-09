@@ -77,8 +77,6 @@ const BookingDetailsModal = ({ booking, isOpen, onClose, onSuccess }) => {
                 startDate: new Date(booking.startTime).toISOString().slice(0, 10),
                 // Format time for input type="time" (HH:mm)
                 startTime: new Date(booking.startTime).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }),
-                // Format time for input type="time" (HH:mm)
-                startTime: new Date(booking.startTime).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }),
                 notes: booking.notes || '',
                 grossAmount: booking.finance.grossAmount || 0
             });

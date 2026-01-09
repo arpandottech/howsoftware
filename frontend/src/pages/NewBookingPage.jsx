@@ -93,7 +93,6 @@ const NewBookingPage = () => {
                 persons: Number(formData.persons),
                 customHours: Number(formData.customHours),
 
-                customHours: Number(formData.customHours),
                 initialRentPayment: Number(formData.initialRentPayment),
                 advanceTokenAmount: Number(formData.advanceTokenAmount)
             };

@@ -12,7 +12,6 @@ const TodayBookingsPage = () => {
     // Modal Form State
     const [endSessionForm, setEndSessionForm] = useState({
         extraRentPayment: 0,
-        extraRentPayment: 0,
         paymentMethod: 'CASH'
     });
 
@@ -48,7 +47,6 @@ const TodayBookingsPage = () => {
 
         setEndSessionForm({
             extraRentPayment: initialRent,
-            extraRentPayment: initialRent,
             paymentMethod: 'CASH'
         });
         setShowModal(true);
@@ -58,7 +56,6 @@ const TodayBookingsPage = () => {
         e.preventDefault();
         try {
             const res = await api.post(`/bookings/${selectedBooking._id}/end-session`, {
-                extraRentPayment: Number(endSessionForm.extraRentPayment),
                 extraRentPayment: Number(endSessionForm.extraRentPayment),
                 paymentMethod: endSessionForm.paymentMethod
             });

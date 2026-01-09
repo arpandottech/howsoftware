@@ -35,7 +35,7 @@ const BookingModal = ({ isOpen, onClose }) => {
     // Guard Clause: Don't render if not open
     if (!isOpen) return null;
 
-    useEffect(() => {
+    React.useEffect(() => {
         if (isOpen) {
             // Reset or init logic logic if needed
         }
