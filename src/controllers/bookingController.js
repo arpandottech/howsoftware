@@ -64,16 +64,7 @@ exports.createBooking = async (req, res, next) => {
             }
         }
 
-        // 1. Load Pricing Settings
-        let settings = await PricingSettings.findOne();
-        if (!settings) {
-            // Create defaults if needed (safety fallback)
-            settings = await PricingSettings.create({
-                hourlyRate: 500,
-                halfDay: { hours: 5, price: 2500, allowedPersons: 1 }, // 500 * 5 = 2500
-                fullDay: { hours: 11, price: 5500, allowedPersons: 1 } // 500 * 11 = 5500
-            });
-        }
+        // 1. Pricing Settings Removed (Manual Pricing Implemented)
 
         // 2. Resolve Hours
         let hours = 0;
@@ -88,7 +79,6 @@ exports.createBooking = async (req, res, next) => {
         }
 
         if (hours === 0 && sessionType !== 'CUSTOM') {
-            // Fallback if something weird happens
             hours = 1;
         }
 
@@ -96,17 +86,17 @@ exports.createBooking = async (req, res, next) => {
         const start = new Date(startTime);
         const endTime = new Date(start.getTime() + hours * 60 * 60 * 1000);
 
-        // 4. Compute Rent (Gross)
-        // Formula: grossAmount = ratePerPersonPerHour * persons * hours
-        // User requested dynamic pricing from DB settings
-        const ratePerPersonPerHour = settings.hourlyRate;
-        const grossAmount = ratePerPersonPerHour * Number(persons) * hours;
+        // 4. Compute Rent (Gross) - MANUAL
+        // We now expect 'grossAmount' (Total Amount) from the frontend.
+        const providedGrossAmount = Number(req.body.grossAmount);
+        const grossAmount = isNaN(providedGrossAmount) ? 0 : providedGrossAmount;
 
-        // 5. Discount (Initial Booking Creation: No discount usually, unless we want to keep it? User said remove from booking form)
+        // 5. Discount
         // User removed inputs, so discountAmount will be undefined or 0 from frontend.
-        // We keep the logic just in case, but it will be 0.
         let finalDiscount = Number(discountAmount);
         if (finalDiscount < 0) finalDiscount = 0;
+        // Logic check: typically discount shouldn't exceed gross, but for manual overrides we might allow flexibility?
+        // Let's keep safety for now.
         if (finalDiscount > grossAmount) finalDiscount = grossAmount;
 
         const netAmount = grossAmount - finalDiscount;
@@ -175,9 +165,8 @@ exports.createBooking = async (req, res, next) => {
             endTime,
             status,
             pricingSnapshot: {
-                ratePerPersonPerHour: ratePerPersonPerHour,
-                halfDayHours: settings.halfDay.hours,
-                fullDayHours: settings.fullDay.hours
+                // Manual pricing model - snapshot is placeholder/empty or minimal
+                manual: true
             },
             finance: {
                 grossAmount,
@@ -298,37 +287,16 @@ exports.endSession = async (req, res, next) => {
         const actualExitTime = exitTime ? new Date(exitTime) : new Date();
         booking.actualExitTime = actualExitTime;
 
-        // 2. Calculate Overtime
-        // Buffer = 10 mins
-        const bufferMinutes = 10;
-        const endTime = new Date(booking.endTime);
-        const cutoffTime = new Date(endTime.getTime() + bufferMinutes * 60000);
+        // 2. Overtime / Extra Charges
+        // We calculate duration for logging/check, but charge is MANUAL.
 
-        let extraHours = 0;
         let extraCharge = 0;
 
-        if (actualExitTime > cutoffTime) {
-            const diffMs = actualExitTime - cutoffTime;
-            const diffMinutes = Math.ceil(diffMs / 60000);
-            extraHours = Math.ceil(diffMinutes / 60);
-
-            // Calculate Charge
-            // Use rate from snapshot to preserve original pricing agreement
-            const rate = booking.pricingSnapshot.ratePerPersonPerHour;
-            extraCharge = rate * booking.persons * extraHours;
-        }
-
-        // Manual Overtime Override
-        // If manualOvertimeAmount is provided, we use that.
-        // If not, we default to 0 (DISABLE AUTO-APPLY as per user request).
-        // The calculated 'extraCharge' above is now just for reference/logging if we wanted, 
-        // but effectively we ignore it for the final bill unless user manually sent it.
-
-        if (manualOvertimeAmount !== undefined) {
+        // Manual Extra / Overtime Application
+        // The user wants to manually add charges. 
+        // We use 'manualOvertimeAmount' as the field for this "Extra Charges".
+        if (manualOvertimeAmount !== undefined && manualOvertimeAmount !== null) {
             extraCharge = Number(manualOvertimeAmount);
-        } else {
-            // Default to 0 if not provided, ensuring no auto-charge.
-            extraCharge = 0;
         }
 
         // 3. Update Finance (Overtime)
@@ -398,7 +366,7 @@ exports.endSession = async (req, res, next) => {
             success: true,
             data: booking,
             overtime: {
-                extraHours,
+                extraHours: 0,
                 extraCharge
             }
         });
@@ -535,14 +503,15 @@ exports.updateBooking = async (req, res, next) => {
             const end = new Date(newStartTime.getTime() + hours * 60 * 60 * 1000);
 
             // 3. Compute Rent (Gross)
-            // If explicit grossAmount provided, use it. Otherwise calculate.
+            // If explicit grossAmount provided, use it. 
+            // If NOT provided, we KEEP existing grossAmount (we don't recalculate based on persons/hours anymore).
+            // Unless the user explicitly wants to update the price, they must send grossAmount.
+
             let newGross;
             if (grossAmount !== undefined) {
                 newGross = Number(grossAmount);
             } else {
-                // Use SNAPSHOT rate to preserve original price agreement
-                const rate = booking.pricingSnapshot?.ratePerPersonPerHour || 500;
-                newGross = rate * newPersons * hours;
+                newGross = booking.finance.grossAmount;
             }
 
             // 4. Update Financials

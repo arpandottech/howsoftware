@@ -28,6 +28,7 @@ const BookingModal = ({ isOpen, onClose }) => {
         startDate: new Date().toISOString().split('T')[0],
         startTime: getCurrentTime(),
 
+        grossAmount: 0, // Manual Amount
         initialRentPayment: 0,
         paymentMethod: 'CASH'
     });
@@ -61,7 +62,7 @@ const BookingModal = ({ isOpen, onClose }) => {
         const requiredFields = [
             'bookingType', 'customerName', 'phone', 'photographyName',
             'persons', 'sessionType', 'startDate', 'startTime',
-            'initialRentPayment', 'paymentMethod'
+            'grossAmount', 'initialRentPayment', 'paymentMethod'
         ];
 
         const missingField = requiredFields.find(field => {
@@ -91,6 +92,7 @@ const BookingModal = ({ isOpen, onClose }) => {
                 persons: Number(formData.persons),
                 customHours: Number(formData.customHours),
 
+                grossAmount: Number(formData.grossAmount),
                 initialRentPayment: Number(formData.initialRentPayment)
             };
 
@@ -102,7 +104,7 @@ const BookingModal = ({ isOpen, onClose }) => {
                     bookingType: 'WALK_IN', customerName: '', photographyName: '', phone: '',
                     persons: 1, sessionType: 'ONE_HOUR', customHours: 0, startDate: new Date().toISOString().split('T')[0],
                     startTime: getCurrentTime(),
-                    initialRentPayment: 0, paymentMethod: 'CASH'
+                    grossAmount: 0, initialRentPayment: 0, paymentMethod: 'CASH'
                 });
                 setTimeout(() => {
                     setSuccessMsg('');
@@ -267,6 +269,7 @@ const BookingModal = ({ isOpen, onClose }) => {
                         <div className="pt-4">
                             <h3 className="text-lg font-bold text-text-main border-b border-gray-100 pb-2 mb-5">Payment & Finance</h3>
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                <Input label="Total Amount (₹)" type="number" name="grossAmount" value={formData.grossAmount} onChange={handleChange} required />
                                 <Input label="Payment (₹)" type="number" name="initialRentPayment" value={formData.initialRentPayment} onChange={handleChange} required />
                                 <div>
                                     <label className="block text-xs font-bold text-text-secondary mb-1.5 uppercase tracking-wide">Payment Method <span className="text-red-500">*</span></label>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
@@ -14,19 +14,8 @@ const NewBookingPage = () => {
     const [error, setError] = useState('');
     const [successMsg, setSuccessMsg] = useState('');
 
-    useEffect(() => {
-        const fetchSettings = async () => {
-            try {
-                const res = await api.get('/settings/pricing');
-                if (res.data.success) {
-                    setPricingSettings(res.data.data);
-                }
-            } catch (err) {
-                console.error("Failed to fetch pricing settings", err);
-            }
-        };
-        fetchSettings();
-    }, []);
+    // UseEffect for settings removed
+
 
     const getCurrentTime = () => {
         const now = new Date();
@@ -47,6 +36,7 @@ const NewBookingPage = () => {
         startDate: new Date().toISOString().split('T')[0],
         startTime: getCurrentTime(),
 
+        grossAmount: 0, // Manual
         initialRentPayment: 0,
         advanceTokenAmount: 0,
         paymentMethod: 'CASH'
@@ -75,7 +65,7 @@ const NewBookingPage = () => {
         const requiredFields = [
             'bookingType', 'customerName', 'phone', 'photographyName',
             'persons', 'sessionType', 'startDate', 'startTime',
-            'initialRentPayment', 'paymentMethod'
+            'grossAmount', 'initialRentPayment', 'paymentMethod'
         ];
 
         const missingField = requiredFields.find(field => {
@@ -94,6 +84,7 @@ const NewBookingPage = () => {
                 persons: Number(formData.persons),
                 customHours: Number(formData.customHours),
 
+                grossAmount: Number(formData.grossAmount),
                 initialRentPayment: Number(formData.initialRentPayment),
                 advanceTokenAmount: Number(formData.advanceTokenAmount)
             };
@@ -105,7 +96,7 @@ const NewBookingPage = () => {
                 setFormData({
                     bookingType: 'WALK_IN', customerName: '', photographyName: '', phone: '',
                     persons: 1, sessionType: 'ONE_HOUR', customHours: 0, startDate: new Date().toISOString().split('T')[0],
-                    initialRentPayment: 0, advanceTokenAmount: 0, paymentMethod: 'CASH'
+                    grossAmount: 0, initialRentPayment: 0, advanceTokenAmount: 0, paymentMethod: 'CASH'
                 });
                 // Navigate back to dashboard after short delay
                 setTimeout(() => {
@@ -266,6 +257,7 @@ const NewBookingPage = () => {
                             <div className="pt-4">
                                 <h3 className="text-lg font-bold text-text-main border-b border-gray-100 pb-2 mb-5">Payment & Finance</h3>
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                    <Input label="Total Amount (₹)" type="number" name="grossAmount" value={formData.grossAmount} onChange={handleChange} required />
                                     <div className="space-y-2">
                                         {formData.bookingType === 'ADVANCE' ? (
                                             <Input label="Advance Token (₹)" type="number" name="advanceTokenAmount" value={formData.advanceTokenAmount} onChange={handleChange} required />

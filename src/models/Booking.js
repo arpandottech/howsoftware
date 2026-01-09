@@ -58,7 +58,7 @@ const bookingSchema = new mongoose.Schema({
     pricingSnapshot: {
         ratePerPersonPerHour: {
             type: Number,
-            required: true
+            default: 0
         },
         halfDayHours: {
             type: Number

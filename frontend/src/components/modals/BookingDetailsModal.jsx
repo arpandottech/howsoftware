@@ -26,6 +26,7 @@ const BookingDetailsModal = ({ booking, isOpen, onClose, onSuccess }) => {
     const [manualOvertimeAmount, setManualOvertimeAmount] = useState(0); // New State
     const [discountAmount, setDiscountAmount] = useState(0);
     const [discountReference, setDiscountReference] = useState('');
+    const [showExtraChargesInput, setShowExtraChargesInput] = useState(false);
 
     // Edit Mode State
     const [editFormData, setEditFormData] = useState({});
@@ -57,6 +58,15 @@ const BookingDetailsModal = ({ booking, isOpen, onClose, onSuccess }) => {
             setManualOvertimeAmount(0);
         }
     }, [viewMode, booking]);
+
+    // Timer for live duration update
+    const [, setTick] = useState(0);
+    useEffect(() => {
+        const timer = setInterval(() => {
+            setTick(t => t + 1);
+        }, 60000); // Update every minute
+        return () => clearInterval(timer);
+    }, []);
 
     useEffect(() => {
         if (viewMode === 'CHECKOUT' && booking) {
@@ -282,25 +292,29 @@ const BookingDetailsModal = ({ booking, isOpen, onClose, onSuccess }) => {
                                     </div>
 
                                     <div className="flex flex-col items-center justify-center relative">
-                                        <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full mb-1">
-                                            {differenceInMinutes(parseISO(booking.endTime), parseISO(booking.startTime)) / 60} Hr
+                                        {/* Time Spent Display */}
+                                        <span className={`text-xs font-bold px-3 py-1 rounded-full mb-1 ${booking.status === 'COMPLETED' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>
+                                            {(() => {
+                                                const start = parseISO(booking.startTime);
+                                                const end = booking.actualExitTime ? parseISO(booking.actualExitTime) : new Date();
+                                                const mins = differenceInMinutes(end, start);
+                                                const h = Math.floor(mins / 60);
+                                                const m = mins % 60;
+                                                return `${h}h ${m}m`;
+                                            })()}
                                         </span>
-                                        <div className="w-16 h-px bg-gray-200"></div>
-                                        <div className="absolute right-0 -mr-1 top-1/2 mt-1 w-2 h-2 border-t border-r border-gray-300 transform rotate-45"></div>
+                                        <div className="text-[10px] text-gray-400 font-medium uppercase tracking-wide">Duration</div>
                                     </div>
 
                                     <div className="flex-1 text-right">
-                                        <div className="text-xs text-text-secondary font-semibold mb-1">SCHEDULED END</div>
-                                        <div className="font-bold text-gray-900">{format(parseISO(booking.endTime), 'hh:mm a')}</div>
-                                        <div className="text-xs text-gray-400">{format(parseISO(booking.endTime), 'dd MMM')}</div>
+                                        <div className="text-xs text-text-secondary font-semibold mb-1">
+                                            {booking.status === 'COMPLETED' ? 'EXIT TIME' : 'CURRENT TIME'}
+                                        </div>
+                                        <div className="font-bold text-gray-900">
+                                            {booking.actualExitTime ? format(parseISO(booking.actualExitTime), 'hh:mm a') : format(new Date(), 'hh:mm a')}
+                                        </div>
                                     </div>
                                 </div>
-                                {booking.actualExitTime && (
-                                    <div className="mt-4 pt-4 border-t border-gray-200">
-                                        <div className="text-xs text-gray-500 font-semibold mb-1">ACTUAL EXIT</div>
-                                        <div className="font-bold text-blue-600">{format(parseISO(booking.actualExitTime), 'hh:mm a')}</div>
-                                    </div>
-                                )}
                             </div>
 
                             {/* Financials */}
@@ -370,36 +384,13 @@ const BookingDetailsModal = ({ booking, isOpen, onClose, onSuccess }) => {
                                         <span>{formatCurrency(finance.grossAmount || 0)}</span>
                                     </div>
 
-                                    {/* Overtime Suggestion Display */}
-                                    {overtimeStats.minutes > 0 ? (
-                                        <div className="bg-yellow-900/30 p-2 rounded-lg border border-yellow-500/30 text-xs">
-                                            <div className="flex justify-between text-yellow-500 font-bold mb-1">
-                                                <span>Duration Exceeded by {overtimeStats.minutes} mins</span>
-                                                <span>({overtimeStats.hours} extra hr)</span>
-                                            </div>
-                                            <div className="flex justify-between text-gray-300">
-                                                <span>Suggested Charge:</span>
-                                                <span>{formatCurrency(overtimeStats.amount)}</span>
-                                            </div>
-                                            <button
-                                                type="button"
-                                                onClick={() => setManualOvertimeAmount(overtimeStats.amount)}
-                                                className="w-full mt-3 py-3 bg-yellow-400 text-yellow-900 rounded-xl font-bold hover:bg-yellow-300 transition-colors shadow-lg flex items-center justify-center gap-2"
-                                            >
-                                                Apply Suggestion (+ {formatCurrency(overtimeStats.amount)})
-                                            </button>
+                                    {/* Manual Extra Charges Input (Visual in Receipt) */}
+                                    {manualOvertimeAmount > 0 ? (
+                                        <div className="flex justify-between items-center text-sm font-bold text-yellow-400">
+                                            <span>Extra Charges</span>
+                                            <span>+ {formatCurrency(Number(manualOvertimeAmount))}</span>
                                         </div>
-                                    ) : (
-                                        <div className="text-xs text-gray-500 italic">
-                                            No overtime detected based on schedule.
-                                        </div>
-                                    )}
-
-                                    {/* Manual Overtime Input (Visual in Receipt) */}
-                                    <div className="flex justify-between items-center text-sm font-bold text-yellow-400">
-                                        <span>Extra / Overtime Charge</span>
-                                        <span>+ {formatCurrency(Number(manualOvertimeAmount))}</span>
-                                    </div>
+                                    ) : null}
 
                                     <div className="flex justify-between items-center text-sm font-bold pt-1 border-t border-gray-700">
                                         <span>Total Gross</span>
@@ -419,35 +410,62 @@ const BookingDetailsModal = ({ booking, isOpen, onClose, onSuccess }) => {
                                 </div>
 
                                 <div className="border-t border-white/20 pt-4 flex justify-between items-center">
-                                    <div className="border-t border-white/20 pt-4 flex justify-between items-center">
-                                        {currentNetPayable > 0 ? (
-                                            <>
-                                                <span className="text-lg font-bold">Total To Pay</span>
-                                                <span className="text-3xl font-black text-white">{formatCurrency(currentNetPayable)}</span>
-                                            </>
-                                        ) : (
-                                            <>
-                                                <span className="text-lg font-bold text-green-400">Refund To Customer</span>
-                                                <span className="text-3xl font-black text-green-400">{formatCurrency(Math.abs(currentNetPayable))}</span>
-                                            </>
-                                        )}
-                                    </div>
+                                    {currentNetPayable > 0 ? (
+                                        <>
+                                            <span className="text-lg font-bold">Total To Pay</span>
+                                            <span className="text-3xl font-black text-white">{formatCurrency(currentNetPayable)}</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <span className="text-lg font-bold text-green-400">Refund To Customer</span>
+                                            <span className="text-3xl font-black text-green-400">{formatCurrency(Math.abs(currentNetPayable))}</span>
+                                        </>
+                                    )}
                                 </div>
+                            </div>
+
+                            {/* Payment Logic */}
+                            {/* Extra Charges Section (Always Visible) */}
+                            <div className="space-y-2">
+                                <div className="flex justify-between items-center">
+                                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Extra Charges</label>
+                                    {!showExtraChargesInput && manualOvertimeAmount === 0 && (
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowExtraChargesInput(true)}
+                                            className="text-xs font-bold text-primary hover:underline"
+                                        >
+                                            + Add Charge
+                                        </button>
+                                    )}
+                                </div>
+
+                                {(showExtraChargesInput || manualOvertimeAmount > 0) && (
+                                    <div className="flex gap-2">
+                                        <input
+                                            type="number"
+                                            value={manualOvertimeAmount}
+                                            onChange={(e) => setManualOvertimeAmount(e.target.value)}
+                                            className="flex-1 bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm font-bold focus:outline-none focus:border-black"
+                                            placeholder="Enter Amount"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setManualOvertimeAmount(0);
+                                                setShowExtraChargesInput(false);
+                                            }}
+                                            className="px-3 py-2 bg-gray-100 rounded-xl text-gray-500 hover:bg-gray-200"
+                                        >
+                                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                                        </button>
+                                    </div>
+                                )}
                             </div>
 
                             {/* Payment Logic */}
                             {currentNetPayable > 0 ? (
                                 <div className="space-y-4">
-                                    {/* Overtime Input Field */}
-                                    <div>
-                                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5">Manual Overtime / Extra Charge</label>
-                                        <input
-                                            type="number"
-                                            value={manualOvertimeAmount}
-                                            onChange={(e) => setManualOvertimeAmount(e.target.value)}
-                                            className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm font-bold focus:outline-none focus:border-black"
-                                        />
-                                    </div>
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         <div>
                                             <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5">Discount Amount</label>
