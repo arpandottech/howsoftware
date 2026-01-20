@@ -89,7 +89,7 @@ const ExportBookingModal = ({ isOpen, onClose }) => {
             doc.text(`Booking Report: ${dateLabel}`, 105, 60, { align: 'center' });
 
             // -- Table --
-            const tableColumn = ["Couple Name", "Phone", "Date & Time", "Amount"];
+            const tableColumn = ["Couple Name", "Phone", "Studio", "Persons", "Date & Time", "Amount"];
             const tableRows = [];
 
             bookings.forEach(b => {
@@ -100,6 +100,8 @@ const ExportBookingModal = ({ isOpen, onClose }) => {
                 const bookingData = [
                     b.customerName,
                     b.phone,
+                    b.photographyName || '-',
+                    b.persons || '0',
                     bookingDate,
                     amount
                 ];
@@ -120,9 +122,12 @@ const ExportBookingModal = ({ isOpen, onClose }) => {
                 columnStyles: {
                     // 0: Couple Name (Text)
                     // 1: Phone
-                    // 2: Date
-                    // 3: Amount (Right align ideally)
-                    3: { halign: 'right' }
+                    // 2: Studio
+                    // 3: Persons
+                    // 4: Date
+                    // 5: Amount (Right align ideally)
+                    3: { halign: 'center' },
+                    5: { halign: 'right' }
                 },
                 styles: {
                     fontSize: 10,
